@@ -1,79 +1,136 @@
 <!DOCTYPE html>
 <html>
 <head><script src="https://cdn.tailwindcss.com"></script></head>
-<body class="bg-gray-100 p-8">
-    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold">Worker App</h1>
-            <p class="font-bold text-green-600">Wallet: ₹<span id="wallet">{{ worker.wallet_balance }}</span></p>
+<body class="bg-gray-100 p-8 font-sans">
+    <div class="max-w-4xl mx-auto grid grid-cols-3 gap-6">
+        
+        <div class="col-span-1 space-y-6">
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-2">Worker Hub</h2>
+                <p class="font-bold text-green-600 text-2xl mb-4">₹{{ worker.wallet_balance }}</p>
+                
+                <div class="bg-gray-50 border rounded p-3 text-sm mb-4">
+                    <p class="text-gray-500 font-bold mb-1">Local Conditions</p>
+                    <p>🌤️ Weather: <span class="font-bold">Clear (Low Risk)</span></p>
+                    <p>🚗 Traffic: <span class="font-bold text-red-500">Heavy Gridlock Detected</span></p>
+                </div>
+            </div>
+
+            {% if not policy %}
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="font-bold mb-4 text-red-600">⚠️ No Weekly Shield Active</h2>
+                <div class="space-y-4">
+                    {% for opt in options %}
+                    <div class="border p-3 rounded {% if recommended == opt.tier %}border-blue-500 bg-blue-50{% endif %}">
+                        <h3 class="font-bold">{{ opt.tier }} Plan - ₹{{ opt.premium }}</h3>
+                        <p class="text-xs text-gray-500 mb-2">{{ opt.xai_description }}</p>
+                        <form action="/buy_policy" method="POST">
+                            <input type="hidden" name="tier" value="{{ opt.tier }}">
+                            <input type="hidden" name="premium" value="{{ opt.premium }}">
+                            <button class="w-full bg-blue-600 text-white py-1 rounded text-sm font-bold shadow">Buy Cover</button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-gradient-to-b from-blue-600 to-indigo-800 text-white rounded-xl shadow p-6">
+                <h2 class="font-bold text-xl mb-1">🛡️ {{ policy.tier }} Shield Active</h2>
+                <p class="text-xs text-blue-200 mb-4">Premium: ₹{{ policy.total_premium }}/week</p>
+                <div class="bg-white/10 rounded p-3 text-sm">
+                    <p class="font-bold mb-2">Active Triggers for Current Orders:</p>
+                    <ul class="list-disc pl-4 space-y-1 text-xs text-blue-100">
+                        <li>Route delay > 30 minutes</li>
+                        <li>Road closures / Unplanned strikes</li>
+                        <li>Instant ₹250 compensation</li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
-        {% if policy %}
-            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
-                <h3 class="font-bold">Active Policy Shield</h3>
-                <p class="text-sm">Covered for Weather & Traffic Disruptions.</p>
+        <div class="col-span-2 space-y-6">
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2">📦 Pending Order Queue</h2>
+                
+                {% if pending_orders %}
+                    <div class="space-y-4 max-h-96 overflow-y-auto">
+                        {% for order in pending_orders %}
+                        <div class="border-2 border-indigo-100 p-4 rounded-lg shadow-sm hover:border-indigo-300 transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-indigo-900">Route: {{ order.origin_name }} → {{ order.dest_name }}</h3>
+                                <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded font-bold">New</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mb-3 font-mono">ID: #{{ order.id }} | Dist: ~12km</p>
+                            
+                            <div class="flex space-x-2">
+                                <button onclick="startSimulatedTrip(this, '{{ order.id }}', '{{ order.origin_lat }}', '{{ order.origin_lon }}', '{{ order.dest_lat }}', '{{ order.dest_lon }}')" class="flex-1 bg-indigo-600 text-white font-bold py-2 rounded text-sm shadow hover:bg-indigo-700">
+                                    Accept & Start GPS
+                                </button>
+                                <button onclick="rejectOrder('{{ order.id }}')" class="bg-red-100 text-red-700 font-bold py-2 px-4 rounded text-sm hover:bg-red-200">
+                                    Reject
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center p-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                        <p class="text-gray-500">Queue is empty. Waiting for dispatcher...</p>
+                    </div>
+                {% endif %}
             </div>
-        {% else %}
-            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 flex justify-between items-center">
-                <div>
-                    <h3 class="font-bold">No Active Cover</h3>
-                    <p class="text-sm">Risk level today is High.</p>
-                </div>
-                <form action="/buy_policy" method="POST">
-                    <button class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold">Buy Weekly Cover (₹35)</button>
-                </form>
-            </div>
-        {% endif %}
 
-        {% if pending_order %}
-            <div class="bg-indigo-50 border border-indigo-200 p-4 rounded mb-6">
-                <h3 class="font-bold text-indigo-800 mb-2">🚨 New Order Received!</h3>
-                <p class="text-sm mb-4">Pickup: ({{ pending_order.origin_lat }}, {{ pending_order.origin_lon }})</p>
-                <button id="sim-btn" data-order-id="{{ pending_order.id }}" class="w-full bg-indigo-600 text-white font-bold py-2 rounded">
-                    Start Delivery & Monitor Route
-                </button>
+            <div class="bg-gray-900 text-green-400 font-mono text-sm p-4 rounded-xl min-h-[200px] shadow-inner" id="terminal">
+                > System Online. Weather and Traffic APIs connected...<br>
+                > Awaiting route execution...
             </div>
-        {% else %}
-            <div class="text-center p-8 bg-gray-50 rounded mb-6 border border-dashed">
-                <p class="text-gray-500 animate-pulse">Waiting for orders from platform...</p>
-                <p class="text-xs mt-2 text-gray-400">(Go to the Company Dashboard in another tab to dispatch an order here)</p>
-            </div>
-        {% endif %}
-
-        <div class="bg-gray-900 text-green-400 font-mono text-sm p-4 rounded min-h-[150px]" id="terminal">
-            > LangGraph AI Copilot Ready...
         </div>
     </div>
 
     <script>
-        async function acceptOrder(orderId) {
+        async function rejectOrder(orderId) {
+            await fetch('/api/reject_order', {
+                method: 'POST', body: JSON.stringify({order_id: orderId}),
+                headers: {'Content-Type': 'application/json'}
+            });
+            location.reload();
+        }
+
+        async function startSimulatedTrip(btnElement, orderId, oLat, oLon, dLat, dLon) {
             const terminal = document.getElementById('terminal');
-            const btn = document.getElementById('sim-btn');
-            btn.disabled = true; btn.innerText = "Driving...";
-            terminal.innerHTML = "> Order Accepted.<br>> AI checking TomTom & Weather APIs for route...<br>";
+            btnElement.disabled = true;
+            btnElement.innerText = "Tracking...";
+            terminal.innerHTML += `<br>> Order #${orderId} Accepted. Fetching Polyline...<br>`;
 
             const res = await fetch('/api/start_delivery', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({order_id: orderId})
             });
             const data = await res.json();
-
-            terminal.innerHTML += `> Route Status: ${data.suggested_action}<br>`;
+            
+            terminal.innerHTML += `> <span class="text-yellow-400">Risk Assessment: ${data.suggested_action}</span><br>`;
             if(data.parametric_triggered) {
-                terminal.innerHTML += `> <span class='text-red-400'>DISRUPTION DETECTED. Claim Auto-Filed.</span><br>`;
-                terminal.innerHTML += `> <span class='text-white bg-green-700 px-1'>₹250 Paid to Wallet.</span>`;
-                setTimeout(() => location.reload(), 3000);
-            } else {
-                terminal.innerHTML += `> Delivery completed normally.`;
-                setTimeout(() => location.reload(), 2000);
+                terminal.innerHTML += `> <span class='text-red-400 font-bold bg-red-900/30 px-1'>TRIGGER: Claim Auto-Filed & Paid.</span><br>`;
             }
-        }
 
-        const startButton = document.getElementById('sim-btn');
-        if (startButton) {
-            startButton.addEventListener('click', () => {
-                acceptOrder(Number(startButton.dataset.orderId));
-            });
+            const pathPoints = data.route_data.path || [];
+            if(pathPoints.length > 0) {
+                terminal.innerHTML += `> <span class='text-blue-300'>Initiating Live GPS Telemetry...</span><br>`;
+                for(let i = 0; i < pathPoints.length; i += Math.max(1, Math.floor(pathPoints.length / 5))) {
+                    const pt = pathPoints[i];
+                    terminal.innerHTML += `> GPS Ping: ${pt.latitude.toFixed(4)}, ${pt.longitude.toFixed(4)}<br>`;
+                    terminal.scrollTop = terminal.scrollHeight;
+                    
+                    await fetch('/api/update_gps', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({order_id: orderId, lat: pt.latitude, lon: pt.longitude})
+                    });
+                    await new Promise(r => setTimeout(r, 800));
+                }
+            }
+            terminal.innerHTML += `> <span class="text-green-400 font-bold">Route #${orderId} Complete.</span><br>`;
+            setTimeout(() => location.reload(), 2000);
         }
     </script>
 </body>

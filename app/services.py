@@ -23,11 +23,7 @@ def get_tomtom_route_data(origin_lat: float, origin_lon: float, dest_lat: float,
             "time_of_day_hours": _current_hour_decimal(),
         }
 
-    url = (
-        "https://api.tomtom.com/routing/1/calculateRoute/"
-        f"{origin_lat},{origin_lon}:{dest_lat},{dest_lon}/json"
-        f"?key={api_key}&routeType=fastest&traffic=true&maxAlternatives=1"
-    )
+    url = f"https://api.tomtom.com/routing/1/calculateRoute/{origin_lat},{origin_lon}:{dest_lat},{dest_lon}/json?key={api_key}&routeType=fastest&traffic=true"
     try:
         response = requests.get(url, timeout=10)
         data = response.json()
