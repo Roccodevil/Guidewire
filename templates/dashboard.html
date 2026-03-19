@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">Worker App</h1>
+            <p class="font-bold text-green-600">Wallet: ₹<span id="wallet">{{ worker.wallet_balance }}</span></p>
+        </div>
+
+        {% if policy %}
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                <h3 class="font-bold">Active Policy Shield</h3>
+                <p class="text-sm">Covered for Weather & Traffic Disruptions.</p>
+            </div>
+        {% else %}
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold">No Active Cover</h3>
+                    <p class="text-sm">Risk level today is High.</p>
+                </div>
+                <form action="/buy_policy" method="POST">
+                    <button class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold">Buy Weekly Cover (₹35)</button>
+                </form>
+            </div>
+        {% endif %}
+
+        {% if pending_order %}
+            <div class="bg-indigo-50 border border-indigo-200 p-4 rounded mb-6">
+                <h3 class="font-bold text-indigo-800 mb-2">🚨 New Order Received!</h3>
+                <p class="text-sm mb-4">Pickup: ({{ pending_order.origin_lat }}, {{ pending_order.origin_lon }})</p>
+                <button id="sim-btn" data-order-id="{{ pending_order.id }}" class="w-full bg-indigo-600 text-white font-bold py-2 rounded">
+                    Start Delivery & Monitor Route
+                </button>
+            </div>
+        {% else %}
+            <div class="text-center p-8 bg-gray-50 rounded mb-6 border border-dashed">
+                <p class="text-gray-500 animate-pulse">Waiting for orders from platform...</p>
+                <p class="text-xs mt-2 text-gray-400">(Go to the Company Dashboard in another tab to dispatch an order here)</p>
+            </div>
+        {% endif %}
+
+        <div class="bg-gray-900 text-green-400 font-mono text-sm p-4 rounded min-h-[150px]" id="terminal">
+            > LangGraph AI Copilot Ready...
+        </div>
+    </div>
+
+    <script>
+        async function acceptOrder(orderId) {
+            const terminal = document.getElementById('terminal');
+            const btn = document.getElementById('sim-btn');
+            btn.disabled = true; btn.innerText = "Driving...";
+            terminal.innerHTML = "> Order Accepted.<br>> AI checking TomTom & Weather APIs for route...<br>";
+
+            const res = await fetch('/api/start_delivery', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({order_id: orderId})
+            });
+            const data = await res.json();
+
+            terminal.innerHTML += `> Route Status: ${data.suggested_action}<br>`;
+            if(data.parametric_triggered) {
+                terminal.innerHTML += `> <span class='text-red-400'>DISRUPTION DETECTED. Claim Auto-Filed.</span><br>`;
+                terminal.innerHTML += `> <span class='text-white bg-green-700 px-1'>₹250 Paid to Wallet.</span>`;
+                setTimeout(() => location.reload(), 3000);
+            } else {
+                terminal.innerHTML += `> Delivery completed normally.`;
+                setTimeout(() => location.reload(), 2000);
+            }
+        }
+
+        const startButton = document.getElementById('sim-btn');
+        if (startButton) {
+            startButton.addEventListener('click', () => {
+                acceptOrder(Number(startButton.dataset.orderId));
+            });
+        }
+    </script>
+</body>
+</html>

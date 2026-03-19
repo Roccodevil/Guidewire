@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - AI Insurance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8 font-sans">
+    <div class="max-w-5xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Risk & Claims Dashboard</h1>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Active/Recent Policies</h2>
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="text-gray-500 border-b">
+                        <th class="pb-2">Policy ID</th>
+                        <th class="pb-2">Worker ID</th>
+                        <th class="pb-2">Premium</th>
+                        <th class="pb-2">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for policy in policies %}
+                    <tr class="border-b">
+                        <td class="py-3">#{{ policy.id }}</td>
+                        <td class="py-3">#{{ policy.worker_id }}</td>
+                        <td class="py-3 font-bold">₹{{ policy.total_premium }}</td>
+                        <td class="py-3 text-sm">{{ 'Active' if policy.is_active else 'Inactive' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">Recent Parametric Claims</h2>
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="text-gray-500 border-b">
+                        <th class="pb-2">Policy ID</th>
+                        <th class="pb-2">Reason (AI Trigger)</th>
+                        <th class="pb-2">Payout</th>
+                        <th class="pb-2">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for claim in claims %}
+                    <tr class="border-b">
+                        <td class="py-3">#{{ claim.policy_id }}</td>
+                        <td class="py-3 text-sm">{{ claim.reason }}</td>
+                        <td class="py-3 font-bold text-green-600">₹{{ claim.payout_amount }}</td>
+                        <td class="py-3 text-sm text-gray-500">{{ claim.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>

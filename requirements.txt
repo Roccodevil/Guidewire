@@ -1,0 +1,14 @@
+Flask
+Flask-SQLAlchemy
+psycopg2-binary
+python-dotenv
+langgraph
+langchain-groq
+langchain-core
+requests
+APScheduler
+pandas
+numpy
+scikit-learn
+statsmodels
+shap
