@@ -56,7 +56,7 @@ The platform operates as a **three-sided marketplace** (Admin · Worker · Compa
 ║  [ AR Model ] ◄── [ Historical Risk DB ]                     ║
 ║       │                                                      ║
 ║       ▼  (Baseline Risk Score)                               ║
-║  [ Groq Llama 3 LLM ] ◄── [ OpenWeather API ]               ║
+║  [ Groq Llama 3 LLM ] ◄── [ OpenWeather API ]                ║
 ║       │                                                      ║
 ║       ▼  (XAI Explanations + Tiers)                          ║
 ║  [ DB: Basic / Standard / Premium Policy Options ]           ║
