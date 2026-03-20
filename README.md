@@ -290,6 +290,4 @@ ClaimLedger     — immutable record of every payout executed
 
 Built for India's 15 million+ gig workers.
 
-*No claims forms. No adjusters. Just instant, fair, AI-verified protection.*
-
 </div>
