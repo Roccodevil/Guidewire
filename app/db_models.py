@@ -47,6 +47,7 @@ class DeliveryOrder(db.Model):
     origin_lon = db.Column(db.Float, nullable=False)
     dest_lat = db.Column(db.Float, nullable=False)
     dest_lon = db.Column(db.Float, nullable=False)
+    distance_km = db.Column(db.Float)  # Distance between origin and destination
     # NEW: Live tracking fields
     current_lat = db.Column(db.Float)
     current_lon = db.Column(db.Float)

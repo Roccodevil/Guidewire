@@ -1,7 +1,16 @@
 from flask import Flask
+from sqlalchemy import text
 
 from app.config import Config
 from app.db_models import db
+
+
+def _ensure_schema_updates():
+    # create_all creates missing tables but does not add new columns to existing ones.
+    db.session.execute(
+        text("ALTER TABLE delivery_orders ADD COLUMN IF NOT EXISTS distance_km DOUBLE PRECISION")
+    )
+    db.session.commit()
 
 
 def create_app():
@@ -12,6 +21,7 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        _ensure_schema_updates()
 
     from app.routes import main_bp
 

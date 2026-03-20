@@ -1,15 +1,27 @@
 <!DOCTYPE html>
 <html>
-<head><script src="https://cdn.tailwindcss.com"></script></head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-xl shadow-lg w-96">
-        <h2 class="text-2xl font-bold mb-6 text-center">Gig Shield Login</h2>
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(140deg, #f6f9ff 0%, #eef5ff 100%);
+            color: #294663;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center h-screen px-4">
+    <div class="bg-white/95 border border-slate-200 p-8 rounded-xl shadow-lg w-96">
+        <h2 class="text-2xl font-bold mb-6 text-center text-slate-700">Gig Shield Login</h2>
         <form method="POST" action="/login">
-            <input type="text" name="username" placeholder="Username" class="w-full border p-2 mb-4 rounded" required>
-            <input type="password" name="password" placeholder="Password" class="w-full border p-2 mb-6 rounded" required>
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded">Login</button>
+            <input type="text" name="username" placeholder="Username" class="w-full border border-slate-300 p-2 mb-4 rounded" required>
+            <input type="password" name="password" placeholder="Password" class="w-full border border-slate-300 p-2 mb-6 rounded" required>
+            <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 rounded">Login</button>
         </form>
-        <p class="text-xs text-gray-500 mt-4 text-center">Demo Accounts: worker1, admin, company (Pass: 1234)</p>
+        <p class="text-xs text-slate-500 mt-4 text-center">Demo Accounts: worker1, admin, company (Pass: 1234)</p>
     </div>
 </body>
 </html>

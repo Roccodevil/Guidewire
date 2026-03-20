@@ -8,6 +8,7 @@ from flask import (
     session,
     url_for,
 )
+from datetime import datetime, timedelta
 
 from app.actuary_agent import calculate_weekly_premium, generate_policy_tiers, recommend_best_policy
 from app.agent_graph import insurance_graph
@@ -98,16 +99,32 @@ def company_dashboard():
 @main_bp.route("/api/dispatch_order", methods=["POST"])
 def dispatch_order():
     data = request.json
+
+    route_info = get_tomtom_route_data(
+        float(data["origin_lat"]),
+        float(data["origin_lon"]),
+        float(data["dest_lat"]),
+        float(data["dest_lon"]),
+    )
+    by_road_distance_km = route_info.get("route_length_km")
+
+    if by_road_distance_km is None:
+        fallback_distance = data.get("distance_km")
+        by_road_distance_km = float(fallback_distance) if fallback_distance is not None else None
+
     new_order = DeliveryOrder(
         worker_id=data["worker_id"],
         origin_lat=data["origin_lat"],
         origin_lon=data["origin_lon"],
+        origin_name=data.get("origin_name", "Unknown Origin"),
         dest_lat=data["dest_lat"],
         dest_lon=data["dest_lon"],
+        dest_name=data.get("dest_name", "Unknown Destination"),
+        distance_km=by_road_distance_km
     )
     db.session.add(new_order)
     db.session.commit()
-    return jsonify({"status": "Order Dispatched"})
+    return jsonify({"status": "Order Dispatched", "order_id": new_order.id, "distance_km": new_order.distance_km})
 
 
 # --- LANGGRAPH EXECUTION (Triggered by Worker) ---
@@ -291,3 +308,124 @@ def update_gps():
         order.current_lon = data['lon']
         db.session.commit()
     return jsonify({"status": "GPS Updated"})
+
+
+@main_bp.route('/api/admin/analysis', methods=['GET'])
+def admin_analysis_data():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return jsonify({"error": "Unauthorized"}), 401
+
+    granularity = request.args.get('granularity', 'daily').lower()
+    if granularity not in ('daily', 'weekly'):
+        granularity = 'daily'
+
+    start_raw = request.args.get('start')
+    end_raw = request.args.get('end')
+    worker_id_raw = request.args.get('worker_id')
+
+    today = datetime.utcnow().date()
+    default_start = today - timedelta(days=30)
+
+    try:
+        start_date = datetime.strptime(start_raw, '%Y-%m-%d').date() if start_raw else default_start
+        end_date = datetime.strptime(end_raw, '%Y-%m-%d').date() if end_raw else today
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+
+    if end_date < start_date:
+        return jsonify({"error": "End date cannot be before start date."}), 400
+
+    # Policy analytics
+    policies = WeeklyPolicy.query.all()
+    policy_money = {}
+    policy_uses = {}
+
+    for policy in policies:
+        tier = policy.tier or 'Unknown'
+        policy_money[tier] = policy_money.get(tier, 0.0) + float(policy.total_premium or 0.0)
+        policy_uses[tier] = policy_uses.get(tier, 0) + 1
+
+    policy_labels = sorted(policy_money.keys())
+    policy_total_amounts = [round(policy_money[label], 2) for label in policy_labels]
+    policy_use_counts = [policy_uses[label] for label in policy_labels]
+
+    # Compensation trend analytics
+    all_claims = ClaimLedger.query.order_by(ClaimLedger.timestamp.asc()).all()
+    filtered_claims = []
+    for claim in all_claims:
+        claim_date = claim.timestamp.date()
+        if start_date <= claim_date <= end_date:
+            filtered_claims.append(claim)
+
+    grouped = {}
+    for claim in filtered_claims:
+        claim_date = claim.timestamp.date()
+        if granularity == 'weekly':
+            bucket_date = claim_date - timedelta(days=claim_date.weekday())
+        else:
+            bucket_date = claim_date
+        key = bucket_date.isoformat()
+        grouped[key] = grouped.get(key, 0.0) + float(claim.payout_amount or 0.0)
+
+    labels = []
+    values = []
+    cursor = start_date
+    if granularity == 'weekly':
+        cursor = start_date - timedelta(days=start_date.weekday())
+        end_cursor = end_date - timedelta(days=end_date.weekday())
+        while cursor <= end_cursor:
+            key = cursor.isoformat()
+            labels.append(key)
+            values.append(round(grouped.get(key, 0.0), 2))
+            cursor += timedelta(days=7)
+    else:
+        while cursor <= end_date:
+            key = cursor.isoformat()
+            labels.append(key)
+            values.append(round(grouped.get(key, 0.0), 2))
+            cursor += timedelta(days=1)
+
+    worker_policy_payload = None
+    if worker_id_raw:
+        try:
+            worker_id = int(worker_id_raw)
+        except ValueError:
+            return jsonify({"error": "worker_id must be an integer."}), 400
+
+        worker = User.query.filter_by(id=worker_id, role='worker').first()
+        if not worker:
+            return jsonify({"error": "Worker not found."}), 404
+
+        worker_policies = WeeklyPolicy.query.filter_by(worker_id=worker_id).all()
+        worker_policy_money = {}
+        worker_policy_uses = {}
+
+        for policy in worker_policies:
+            tier = policy.tier or 'Unknown'
+            worker_policy_money[tier] = worker_policy_money.get(tier, 0.0) + float(policy.total_premium or 0.0)
+            worker_policy_uses[tier] = worker_policy_uses.get(tier, 0) + 1
+
+        worker_labels = sorted(worker_policy_uses.keys())
+        worker_policy_payload = {
+            "worker_id": worker_id,
+            "worker_name": worker.username,
+            "labels": worker_labels,
+            "use_counts": [worker_policy_uses[label] for label in worker_labels],
+            "total_amounts": [round(worker_policy_money.get(label, 0.0), 2) for label in worker_labels],
+        }
+
+    return jsonify({
+        "policy": {
+            "labels": policy_labels,
+            "total_amounts": policy_total_amounts,
+            "use_counts": policy_use_counts,
+        },
+        "compensation": {
+            "labels": labels,
+            "totals": values,
+            "granularity": granularity,
+            "start": start_date.isoformat(),
+            "end": end_date.isoformat(),
+        },
+        "worker_policy": worker_policy_payload,
+    })

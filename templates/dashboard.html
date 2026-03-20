@@ -1,13 +1,25 @@
 <!DOCTYPE html>
 <html>
-<head><script src="https://cdn.tailwindcss.com"></script></head>
-<body class="bg-gray-100 p-8 font-sans">
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(140deg, #f6f9ff 0%, #eef5ff 100%);
+            color: #294663;
+        }
+    </style>
+</head>
+<body class="p-8 font-sans">
     <div class="max-w-4xl mx-auto grid grid-cols-3 gap-6">
         
         <div class="col-span-1 space-y-6">
             <div class="bg-white rounded-xl shadow p-6">
                 <h2 class="text-xl font-bold text-gray-800 mb-2">Worker Hub</h2>
-                <p class="font-bold text-green-600 text-2xl mb-4">₹{{ worker.wallet_balance }}</p>
+                <p class="font-bold text-blue-600 text-2xl mb-4">₹{{ worker.wallet_balance }}</p>
                 
                 <div class="bg-gray-50 border rounded p-3 text-sm mb-4">
                     <p class="text-gray-500 font-bold mb-1">Local Conditions</p>
@@ -18,25 +30,25 @@
 
             {% if not policy %}
             <div class="bg-white rounded-xl shadow p-6">
-                <h2 class="font-bold mb-4 text-red-600">⚠️ No Weekly Shield Active</h2>
+                <h2 class="font-bold mb-4 text-red-500">⚠️ No Weekly Shield Active</h2>
                 <div class="space-y-4">
                     {% for opt in options %}
-                    <div class="border p-3 rounded {% if recommended == opt.tier %}border-blue-500 bg-blue-50{% endif %}">
+                    <div class="border p-3 rounded {% if recommended == opt.tier %}border-blue-300 bg-blue-50{% endif %}">
                         <h3 class="font-bold">{{ opt.tier }} Plan - ₹{{ opt.premium }}</h3>
                         <p class="text-xs text-gray-500 mb-2">{{ opt.xai_description }}</p>
                         <form action="/buy_policy" method="POST">
                             <input type="hidden" name="tier" value="{{ opt.tier }}">
                             <input type="hidden" name="premium" value="{{ opt.premium }}">
-                            <button class="w-full bg-blue-600 text-white py-1 rounded text-sm font-bold shadow">Buy Cover</button>
+                            <button class="w-full bg-blue-500 text-white py-1 rounded text-sm font-bold shadow">Buy Cover</button>
                         </form>
                     </div>
                     {% endfor %}
                 </div>
             </div>
             {% else %}
-            <div class="bg-gradient-to-b from-blue-600 to-indigo-800 text-white rounded-xl shadow p-6">
+            <div class="bg-gradient-to-b from-blue-500 to-blue-600 text-white rounded-xl shadow p-6">
                 <h2 class="font-bold text-xl mb-1">🛡️ {{ policy.tier }} Shield Active</h2>
-                <p class="text-xs text-blue-200 mb-4">Premium: ₹{{ policy.total_premium }}/week</p>
+                <p class="text-xs text-blue-100 mb-4">Premium: ₹{{ policy.total_premium }}/week</p>
                 <div class="bg-white/10 rounded p-3 text-sm">
                     <p class="font-bold mb-2">Active Triggers for Current Orders:</p>
                     <ul class="list-disc pl-4 space-y-1 text-xs text-blue-100">
@@ -56,18 +68,22 @@
                 {% if pending_orders %}
                     <div class="space-y-4 max-h-96 overflow-y-auto">
                         {% for order in pending_orders %}
-                        <div class="border-2 border-indigo-100 p-4 rounded-lg shadow-sm hover:border-indigo-300 transition">
+                        <div class="border-2 border-blue-100 p-4 rounded-lg shadow-sm hover:border-blue-200 transition">
                             <div class="flex justify-between items-start mb-2">
-                                <h3 class="font-bold text-indigo-900">Route: {{ order.origin_name }} → {{ order.dest_name }}</h3>
+                                <h3 class="font-bold text-slate-700">Route: {{ order.origin_name }} → {{ order.dest_name }}</h3>
                                 <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded font-bold">New</span>
                             </div>
-                            <p class="text-xs text-gray-500 mb-3 font-mono">ID: #{{ order.id }} | Dist: ~12km</p>
+                            {% if order.distance_km is not none %}
+                            <p class="text-xs text-gray-500 mb-3 font-mono">ID: #{{ order.id }} | Road Dist: {{ '%.2f'|format(order.distance_km) }} km</p>
+                            {% else %}
+                            <p class="text-xs text-gray-500 mb-3 font-mono">ID: #{{ order.id }}</p>
+                            {% endif %}
                             
                             <div class="flex space-x-2">
-                                <button onclick="startSimulatedTrip(this, '{{ order.id }}', '{{ order.origin_lat }}', '{{ order.origin_lon }}', '{{ order.dest_lat }}', '{{ order.dest_lon }}')" class="flex-1 bg-indigo-600 text-white font-bold py-2 rounded text-sm shadow hover:bg-indigo-700">
+                                <button onclick="startSimulatedTrip(this, '{{ order.id }}', '{{ order.origin_lat }}', '{{ order.origin_lon }}', '{{ order.dest_lat }}', '{{ order.dest_lon }}')" class="flex-1 bg-blue-500 text-white font-bold py-2 rounded text-sm shadow hover:bg-blue-600">
                                     Accept & Start GPS
                                 </button>
-                                <button onclick="rejectOrder('{{ order.id }}')" class="bg-red-100 text-red-700 font-bold py-2 px-4 rounded text-sm hover:bg-red-200">
+                                <button onclick="rejectOrder('{{ order.id }}')" class="bg-red-100 text-red-600 font-bold py-2 px-4 rounded text-sm hover:bg-red-200">
                                     Reject
                                 </button>
                             </div>
@@ -81,7 +97,7 @@
                 {% endif %}
             </div>
 
-            <div class="bg-gray-900 text-green-400 font-mono text-sm p-4 rounded-xl min-h-[200px] shadow-inner" id="terminal">
+            <div class="bg-slate-800 text-blue-100 font-mono text-sm p-4 rounded-xl min-h-[200px] shadow-inner" id="terminal">
                 > System Online. Weather and Traffic APIs connected...<br>
                 > Awaiting route execution...
             </div>
@@ -109,9 +125,9 @@
             });
             const data = await res.json();
             
-            terminal.innerHTML += `> <span class="text-yellow-400">Risk Assessment: ${data.suggested_action}</span><br>`;
+            terminal.innerHTML += `> <span class="text-yellow-300">Risk Assessment: ${data.suggested_action}</span><br>`;
             if(data.parametric_triggered) {
-                terminal.innerHTML += `> <span class='text-red-400 font-bold bg-red-900/30 px-1'>TRIGGER: Claim Auto-Filed & Paid.</span><br>`;
+                terminal.innerHTML += `> <span class='text-red-300 font-bold bg-red-900/20 px-1'>TRIGGER: Claim Auto-Filed & Paid.</span><br>`;
             }
 
             const pathPoints = data.route_data.path || [];
@@ -129,7 +145,7 @@
                     await new Promise(r => setTimeout(r, 800));
                 }
             }
-            terminal.innerHTML += `> <span class="text-green-400 font-bold">Route #${orderId} Complete.</span><br>`;
+            terminal.innerHTML += `> <span class="text-blue-300 font-bold">Route #${orderId} Complete.</span><br>`;
             setTimeout(() => location.reload(), 2000);
         }
     </script>

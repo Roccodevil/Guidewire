@@ -1,40 +1,78 @@
 <!DOCTYPE html>
 <html>
-<head><script src="https://cdn.tailwindcss.com"></script></head>
-<body class="bg-gray-100 p-8 font-sans">
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(140deg, #f6f9ff 0%, #eef5ff 100%);
+            color: #294663;
+        }
+
+        .tab-btn.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .tab-btn {
+            background: #e8f1ff;
+            color: #1e3a8a;
+        }
+
+        .chart-card {
+            background: #ffffff;
+            border: 1px solid #dbeafe;
+            border-radius: 0.75rem;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08);
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body class="p-8 font-sans">
     <div class="max-w-7xl mx-auto">
-        <h1 class="text-3xl font-bold text-gray-800 mb-8">System Admin Console</h1>
+        <h1 class="text-3xl font-bold text-slate-700 mb-8">System Admin Console</h1>
+
+        <div class="flex gap-2 mb-6">
+            <button id="overviewTabBtn" class="tab-btn active px-4 py-2 rounded font-bold text-sm" onclick="showTab('overview')">Overview</button>
+            <button id="analysisTabBtn" class="tab-btn px-4 py-2 rounded font-bold text-sm" onclick="showTab('analysis')">Analysis</button>
+        </div>
+
+        <div id="overviewTab">
 
         <div class="grid grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-xl shadow border-l-4 border-blue-500">
-                <p class="text-sm text-gray-500 font-bold">Total Premiums Collected</p>
+            <div class="bg-white p-6 rounded-xl shadow border-l-4 border-blue-300">
+                <p class="text-sm text-slate-500 font-bold">Total Premiums Collected</p>
                 <p class="text-3xl font-bold text-blue-600">₹{{ total_premiums }}</p>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow border-l-4 border-red-500">
-                <p class="text-sm text-gray-500 font-bold">Parametric Claims Paid</p>
-                <p class="text-3xl font-bold text-red-600">₹{{ total_payouts }}</p>
+            <div class="bg-white p-6 rounded-xl shadow border-l-4 border-red-300">
+                <p class="text-sm text-slate-500 font-bold">Parametric Claims Paid</p>
+                <p class="text-3xl font-bold text-red-500">₹{{ total_payouts }}</p>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow border-l-4 {% if net_profit >= 0 %}border-green-500{% else %}border-red-500{% endif %}">
-                <p class="text-sm text-gray-500 font-bold">Platform Net Risk Balance</p>
-                <p class="text-3xl font-bold {% if net_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">₹{{ net_profit }}</p>
+            <div class="bg-white p-6 rounded-xl shadow border-l-4 {% if net_profit >= 0 %}border-blue-300{% else %}border-red-300{% endif %}">
+                <p class="text-sm text-slate-500 font-bold">Platform Net Risk Balance</p>
+                <p class="text-3xl font-bold {% if net_profit >= 0 %}text-blue-600{% else %}text-red-500{% endif %}">₹{{ net_profit }}</p>
             </div>
         </div>
 
         <div class="grid grid-cols-2 gap-8 mb-8">
             <div class="bg-white rounded-xl shadow p-6">
-                <h2 class="text-xl font-bold mb-4 border-b pb-2">👥 Fleet Management</h2>
+                <h2 class="text-xl font-bold mb-4 border-b pb-2 text-slate-700">👥 Fleet Management</h2>
                 <form action="/admin/add_worker" method="POST" class="flex space-x-2 mb-4">
                     <input type="text" name="username" placeholder="Worker Username" class="border rounded px-2 py-1 flex-1 text-sm" required>
                     <input type="password" name="password" placeholder="Password" class="border rounded px-2 py-1 w-24 text-sm" required>
-                    <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded text-sm font-bold">Add</button>
+                    <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded text-sm font-bold">Add</button>
                 </form>
                 <table class="w-full text-left text-sm">
-                    <tr class="text-gray-500 border-b"><th class="pb-2">ID</th><th class="pb-2">Username</th><th class="pb-2">Wallet</th><th class="pb-2">Action</th></tr>
+                    <tr class="text-slate-500 border-b"><th class="pb-2">ID</th><th class="pb-2">Username</th><th class="pb-2">Wallet</th><th class="pb-2">Action</th></tr>
                     {% for w in workers %}
                     <tr class="border-b">
                         <td class="py-2">#{{ w.id }}</td>
                         <td class="py-2 font-bold">{{ w.username }}</td>
-                        <td class="py-2 text-green-600">₹{{ w.wallet_balance }}</td>
+                        <td class="py-2 text-blue-600">₹{{ w.wallet_balance }}</td>
                         <td class="py-2">
                             <form action="/admin/delete_worker/{{ w.id }}" method="POST">
                                 <button type="submit" class="text-red-500 text-xs hover:underline">Delete</button>
@@ -49,10 +87,10 @@
                 <div class="flex justify-between items-center mb-4 border-b pb-2">
                     <h2 class="text-xl font-bold">⚙️ Policy Marketplace Options</h2>
                     <form action="/api/generate_tiers" method="POST">
-                        <button type="submit" class="bg-purple-600 text-white text-xs px-3 py-1 rounded font-bold">Auto-Gen (XAI)</button>
+                        <button type="submit" class="bg-yellow-400 text-slate-800 text-xs px-3 py-1 rounded font-bold">Auto-Gen (XAI)</button>
                     </form>
                 </div>
-                <form action="/admin/add_policy" method="POST" class="mb-4 bg-gray-50 p-3 rounded text-sm">
+                <form action="/admin/add_policy" method="POST" class="mb-4 bg-slate-50 p-3 rounded text-sm">
                     <div class="grid grid-cols-3 gap-2 mb-2">
                         <input type="text" name="tier" placeholder="Tier Name (e.g. Ultra)" class="border rounded px-2 py-1" required>
                         <input type="number" name="premium" placeholder="Premium ₹" class="border rounded px-2 py-1" required>
@@ -60,15 +98,15 @@
                     </div>
                     <div class="flex space-x-2">
                         <input type="text" name="description" placeholder="Description/XAI Reasoning" class="border rounded px-2 py-1 flex-1" required>
-                        <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded font-bold">Create</button>
+                        <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded font-bold">Create</button>
                     </div>
                 </form>
                 <ul class="text-sm">
                     {% for opt in policy_options %}
                     <li class="border-b py-2 flex justify-between items-center">
                         <div>
-                            <span class="font-bold text-blue-800">{{ opt.tier }}</span> - ₹{{ opt.premium }}/wk
-                            <p class="text-xs text-gray-500">{{ opt.xai_description }}</p>
+                            <span class="font-bold text-blue-700">{{ opt.tier }}</span> - ₹{{ opt.premium }}/wk
+                            <p class="text-xs text-slate-500">{{ opt.xai_description }}</p>
                         </div>
                         <form action="/admin/delete_policy_option/{{ opt.id }}" method="POST">
                             <button type="submit" class="text-red-500 text-xs hover:underline">Remove</button>
@@ -80,14 +118,14 @@
         </div>
 
         <div class="bg-white rounded-xl shadow p-6">
-            <h2 class="text-xl font-bold mb-4 border-b pb-2 text-indigo-800">📡 Live Telemetry & Claim Ledger</h2>
+            <h2 class="text-xl font-bold mb-4 border-b pb-2 text-slate-700">📡 Live Telemetry & Claim Ledger</h2>
             <table class="w-full text-left text-sm">
-                <tr class="text-gray-500 border-b bg-gray-50"><th class="p-2">Type</th><th class="p-2">Details</th><th class="p-2">Status / Amount</th><th class="p-2">Live GPS / Time</th></tr>
+                <tr class="text-slate-500 border-b bg-slate-50"><th class="p-2">Type</th><th class="p-2">Details</th><th class="p-2">Status / Amount</th><th class="p-2">Live GPS / Time</th></tr>
                 
                 {% for order in live_orders %}
                 <tr class="border-b">
                     <td class="p-2"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">Live Order</span></td>
-                    <td class="p-2 font-bold text-gray-700">Worker {{ order.worker_id }}: {{ order.origin_name }} → {{ order.dest_name }}</td>
+                    <td class="p-2 font-bold text-slate-700">Worker {{ order.worker_id }}: {{ order.origin_name }} → {{ order.dest_name }}</td>
                     <td class="p-2">{{ order.status }}</td>
                     <td class="p-2 font-mono text-blue-600">{{ order.current_lat or 'Pending' }}, {{ order.current_lon or 'Pending' }}</td>
                 </tr>
@@ -95,15 +133,363 @@
                 
                 {% for claim in claims %}
                 <tr class="border-b">
-                    <td class="p-2"><span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Auto-Claim</span></td>
-                    <td class="p-2 text-gray-600 text-xs">{{ claim.reason }}</td>
-                    <td class="p-2 font-bold text-red-600">₹{{ claim.payout_amount }} Paid</td>
-                    <td class="p-2 text-xs text-gray-500">{{ claim.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td class="p-2"><span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">Auto-Claim</span></td>
+                    <td class="p-2 text-slate-600 text-xs">{{ claim.reason }}</td>
+                    <td class="p-2 font-bold text-red-500">₹{{ claim.payout_amount }} Paid</td>
+                    <td class="p-2 text-xs text-slate-500">{{ claim.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
                 </tr>
                 {% endfor %}
             </table>
-            <script>setTimeout(() => location.reload(), 3000);</script>
+        </div>
+
+        </div>
+
+        <div id="analysisTab" class="hidden">
+            <div class="bg-white rounded-xl shadow p-5 mb-6 border border-blue-100">
+                <h2 class="text-xl font-bold text-slate-700 mb-4">Policy & Compensation Analytics</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Granularity</label>
+                        <select id="granularitySelect" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">From</label>
+                        <input id="startDateInput" type="date" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">To</label>
+                        <input id="endDateInput" type="date" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" />
+                    </div>
+                    <button onclick="loadAnalysis()" class="bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2 text-sm font-bold">Load Analysis</button>
+                </div>
+                <p id="analysisStatusText" class="text-xs text-slate-500 mt-3"></p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 items-end">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Worker Specific Pie Charts (Optional)</label>
+                        <select id="workerAnalysisSelect" class="w-full border border-slate-300 rounded px-3 py-2 text-sm" onchange="onWorkerSelectChanged()">
+                            <option value="">Choose worker...</option>
+                            {% for w in workers %}
+                            <option value="{{ w.id }}">{{ w.username }} (ID: {{ w.id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <button type="button" onclick="clearWorkerAnalysisSelection()" class="bg-red-100 hover:bg-red-200 text-red-700 border border-red-200 rounded px-4 py-2 text-sm font-bold">Clear Worker Selection</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+                <div class="chart-card">
+                    <h3 class="font-bold text-slate-700 mb-3">Policy Tier vs Total Money</h3>
+                    <canvas id="policyMoneyChart" height="160"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3 class="font-bold text-slate-700 mb-3">Policy Tier vs Number of Uses</h3>
+                    <canvas id="policyUsesChart" height="160"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h3 class="font-bold text-slate-700 mb-3">Compensation Over Time (Daily/Weekly)</h3>
+                <canvas id="compensationTrendChart" height="120"></canvas>
+            </div>
+
+            <div id="workerPieSection" class="hidden mt-6">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div class="chart-card">
+                        <h3 id="workerUsesTitle" class="font-bold text-slate-700 mb-3">Worker Policy Uses By Type</h3>
+                        <canvas id="workerPolicyUsesPie" height="160"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3 id="workerAmountTitle" class="font-bold text-slate-700 mb-3">Worker Policy Total Amount By Type</h3>
+                        <canvas id="workerPolicyAmountPie" height="160"></canvas>
+                    </div>
+                </div>
+                <p id="workerNoDataText" class="hidden text-sm text-slate-500 mt-3">No policy usage data found for the selected worker.</p>
+            </div>
         </div>
     </div>
+
+    <script>
+        let policyMoneyChart = null;
+        let policyUsesChart = null;
+        let compensationTrendChart = null;
+        let workerPolicyUsesPie = null;
+        let workerPolicyAmountPie = null;
+
+        function showTab(tabName) {
+            const overviewTab = document.getElementById('overviewTab');
+            const analysisTab = document.getElementById('analysisTab');
+            const overviewBtn = document.getElementById('overviewTabBtn');
+            const analysisBtn = document.getElementById('analysisTabBtn');
+
+            if (tabName === 'analysis') {
+                overviewTab.classList.add('hidden');
+                analysisTab.classList.remove('hidden');
+                overviewBtn.classList.remove('active');
+                analysisBtn.classList.add('active');
+                if (!policyMoneyChart || !policyUsesChart || !compensationTrendChart) {
+                    loadAnalysis();
+                }
+            } else {
+                analysisTab.classList.add('hidden');
+                overviewTab.classList.remove('hidden');
+                analysisBtn.classList.remove('active');
+                overviewBtn.classList.add('active');
+            }
+        }
+
+        function formatDateISO(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function setDefaultDateFilters() {
+            const today = new Date();
+            const past = new Date();
+            past.setDate(today.getDate() - 30);
+            document.getElementById('startDateInput').value = formatDateISO(past);
+            document.getElementById('endDateInput').value = formatDateISO(today);
+        }
+
+        async function loadAnalysis() {
+            const granularity = document.getElementById('granularitySelect').value;
+            let start = document.getElementById('startDateInput').value;
+            let end = document.getElementById('endDateInput').value;
+            const workerId = document.getElementById('workerAnalysisSelect').value;
+            const statusEl = document.getElementById('analysisStatusText');
+
+            if (!start || !end) {
+                setDefaultDateFilters();
+                start = document.getElementById('startDateInput').value;
+                end = document.getElementById('endDateInput').value;
+            }
+
+            try {
+                statusEl.textContent = 'Loading analysis data...';
+                let url = `/api/admin/analysis?granularity=${encodeURIComponent(granularity)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+                if (workerId) {
+                    url += `&worker_id=${encodeURIComponent(workerId)}`;
+                }
+                const res = await fetch(url, { credentials: 'same-origin' });
+                let data = null;
+                try {
+                    data = await res.json();
+                } catch (_) {
+                    data = { error: 'Server returned invalid JSON.' };
+                }
+
+                if (!res.ok) {
+                    alert(data.error || 'Failed to load analysis data.');
+                    statusEl.textContent = 'Failed to load analysis data.';
+                    return;
+                }
+
+                if (!data || !data.policy || !data.compensation) {
+                    alert('Analysis response missing required fields.');
+                    statusEl.textContent = 'Analysis response malformed.';
+                    return;
+                }
+
+                renderPolicyMoneyChart(data.policy.labels, data.policy.total_amounts);
+                renderPolicyUsesChart(data.policy.labels, data.policy.use_counts);
+                renderCompensationTrendChart(data.compensation.labels, data.compensation.totals, data.compensation.granularity);
+                renderWorkerPolicyPies(data.worker_policy);
+                statusEl.textContent = `Loaded ${granularity} analysis from ${start} to ${end}.`;
+            } catch (err) {
+                alert('Error loading analysis: ' + err.message);
+                statusEl.textContent = 'Error loading analysis data.';
+            }
+        }
+
+        function normalizeBarSeries(labels, values) {
+            const hasData = Array.isArray(labels) && Array.isArray(values) && labels.length > 0 && values.length > 0;
+            if (!hasData) {
+                return { labels: ['No Data'], values: [0] };
+            }
+            return { labels, values };
+        }
+
+        function onWorkerSelectChanged() {
+            const workerId = document.getElementById('workerAnalysisSelect').value;
+            const section = document.getElementById('workerPieSection');
+            if (!workerId) {
+                section.classList.add('hidden');
+                destroyWorkerPieCharts();
+                return;
+            }
+            section.classList.remove('hidden');
+            loadAnalysis();
+        }
+
+        function clearWorkerAnalysisSelection() {
+            const select = document.getElementById('workerAnalysisSelect');
+            select.value = '';
+            const section = document.getElementById('workerPieSection');
+            section.classList.add('hidden');
+            destroyWorkerPieCharts();
+        }
+
+        function destroyWorkerPieCharts() {
+            if (workerPolicyUsesPie) {
+                workerPolicyUsesPie.destroy();
+                workerPolicyUsesPie = null;
+            }
+            if (workerPolicyAmountPie) {
+                workerPolicyAmountPie.destroy();
+                workerPolicyAmountPie = null;
+            }
+        }
+
+        function renderWorkerPolicyPies(workerPolicy) {
+            const section = document.getElementById('workerPieSection');
+            const noData = document.getElementById('workerNoDataText');
+            const workerId = document.getElementById('workerAnalysisSelect').value;
+
+            if (!workerId) {
+                section.classList.add('hidden');
+                noData.classList.add('hidden');
+                destroyWorkerPieCharts();
+                return;
+            }
+
+            section.classList.remove('hidden');
+
+            if (!workerPolicy || !workerPolicy.labels || workerPolicy.labels.length === 0) {
+                noData.classList.remove('hidden');
+                destroyWorkerPieCharts();
+                return;
+            }
+
+            noData.classList.add('hidden');
+            document.getElementById('workerUsesTitle').textContent = `${workerPolicy.worker_name} - Policy Uses By Type`;
+            document.getElementById('workerAmountTitle').textContent = `${workerPolicy.worker_name} - Policy Total Amount By Type`;
+
+            const colors = ['#3b82f6', '#60a5fa', '#93c5fd', '#facc15', '#ef4444', '#f59e0b', '#1d4ed8'];
+
+            const usesCtx = document.getElementById('workerPolicyUsesPie').getContext('2d');
+            if (workerPolicyUsesPie) workerPolicyUsesPie.destroy();
+            workerPolicyUsesPie = new Chart(usesCtx, {
+                type: 'pie',
+                data: {
+                    labels: workerPolicy.labels,
+                    datasets: [{
+                        label: 'Policy Count',
+                        data: workerPolicy.use_counts,
+                        backgroundColor: colors,
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                    }],
+                },
+                options: { responsive: true },
+            });
+
+            const amountCtx = document.getElementById('workerPolicyAmountPie').getContext('2d');
+            if (workerPolicyAmountPie) workerPolicyAmountPie.destroy();
+            workerPolicyAmountPie = new Chart(amountCtx, {
+                type: 'pie',
+                data: {
+                    labels: workerPolicy.labels,
+                    datasets: [{
+                        label: 'Total Amount',
+                        data: workerPolicy.total_amounts,
+                        backgroundColor: colors,
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                    }],
+                },
+                options: { responsive: true },
+            });
+        }
+
+        function renderPolicyMoneyChart(labels, values) {
+            const normalized = normalizeBarSeries(labels, values);
+            const ctx = document.getElementById('policyMoneyChart').getContext('2d');
+            if (policyMoneyChart) policyMoneyChart.destroy();
+            policyMoneyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: normalized.labels,
+                    datasets: [{
+                        label: 'Total Money (INR)',
+                        data: normalized.values,
+                        backgroundColor: 'rgba(37, 99, 235, 0.72)',
+                        borderColor: 'rgba(29, 78, 216, 1)',
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function renderPolicyUsesChart(labels, values) {
+            const normalized = normalizeBarSeries(labels, values);
+            const ctx = document.getElementById('policyUsesChart').getContext('2d');
+            if (policyUsesChart) policyUsesChart.destroy();
+            policyUsesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: normalized.labels,
+                    datasets: [{
+                        label: 'Number of Uses',
+                        data: normalized.values,
+                        backgroundColor: 'rgba(250, 204, 21, 0.78)',
+                        borderColor: 'rgba(202, 138, 4, 1)',
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, precision: 0 }
+                    }
+                }
+            });
+        }
+
+        function renderCompensationTrendChart(labels, values, granularity) {
+            const ctx = document.getElementById('compensationTrendChart').getContext('2d');
+            if (compensationTrendChart) compensationTrendChart.destroy();
+            compensationTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: `Compensation (${granularity})`,
+                        data: values,
+                        fill: true,
+                        tension: 0.25,
+                        borderWidth: 2,
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                        pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+                        pointRadius: 2.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        setDefaultDateFilters();
+    </script>
 </body>
 </html>
