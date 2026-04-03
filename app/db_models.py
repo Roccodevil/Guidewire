@@ -22,10 +22,12 @@ class User(db.Model):
 class PolicyOption(db.Model):
     __tablename__ = 'policy_options'
     id = db.Column(db.Integer, primary_key=True)
-    tier = db.Column(db.String(50), nullable=False) # Basic, Pro, Max
+    tier = db.Column(db.String(50), nullable=False)
     premium = db.Column(db.Float, nullable=False)
     coverage_limit = db.Column(db.Float, nullable=False)
     xai_description = db.Column(db.Text, nullable=False)
+    terms_text = db.Column(db.Text, default="1. Payouts capped at weekly limit. 2. Must be online during event.")
+    rules_text = db.Column(db.Text, default="Requires active GPS telemetry and platform connection.")
     is_active = db.Column(db.Boolean, default=True)
 
 class WeeklyPolicy(db.Model):
@@ -34,6 +36,10 @@ class WeeklyPolicy(db.Model):
     worker_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     tier = db.Column(db.String(50), nullable=False)
     total_premium = db.Column(db.Float, nullable=False)
+    coverage_limit = db.Column(db.Float, nullable=False)
+    coverage_used = db.Column(db.Float, default=0.0) # NEW: Track payouts
+    terms_text = db.Column(db.Text)
+    rules_text = db.Column(db.Text)
     start_date = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
 

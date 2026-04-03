@@ -1,0 +1,20 @@
+/* Custom smooth scrolling for the AI terminal */
+#terminal {
+    scroll-behavior: smooth;
+    overflow-y: auto;
+}
+
+/* Custom scrollbar for terminal */
+#terminal::-webkit-scrollbar {
+    width: 8px;
+}
+#terminal::-webkit-scrollbar-track {
+    background: #111827; 
+}
+#terminal::-webkit-scrollbar-thumb {
+    background: #374151; 
+    border-radius: 4px;
+}
+#terminal::-webkit-scrollbar-thumb:hover {
+    background: #4B5563; 
+}

@@ -12,3 +12,4 @@ numpy
 scikit-learn
 statsmodels
 shap
+pydantic

@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html>
-<head><script src="https://cdn.tailwindcss.com"></script></head>
+<head>
+    <title>System Admin Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
 <body class="bg-gray-100 p-8 font-sans">
     <div class="max-w-7xl mx-auto">
         <h1 class="text-3xl font-bold text-gray-800 mb-8">System Admin Console</h1>
@@ -65,13 +69,23 @@
                 </form>
                 <ul class="text-sm">
                     {% for opt in policy_options %}
-                    <li class="border-b py-2 flex justify-between items-center">
-                        <div>
-                            <span class="font-bold text-blue-800">{{ opt.tier }}</span> - ₹{{ opt.premium }}/wk
-                            <p class="text-xs text-gray-500">{{ opt.xai_description }}</p>
+                    <li class="border-b py-4 flex justify-between items-start">
+                        <div class="pr-4">
+                            <span class="font-bold text-indigo-900 text-lg">{{ opt.tier }}</span> 
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded ml-2">₹{{ opt.premium }}/wk</span>
+                            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded ml-2">Cover: ₹{{ opt.coverage_limit }}</span>
+                            
+                            <div class="mt-2 bg-gray-50 p-3 rounded border border-gray-200">
+                                <p class="text-xs text-gray-800 font-mono"><strong class="text-indigo-600">Actuarial Underwriting:</strong> {{ opt.xai_description }}</p>
+                            </div>
+                            
+                            <div class="mt-2 text-xs text-gray-500">
+                                <p><strong>Terms:</strong> {{ opt.terms_text }}</p>
+                                <p><strong>Execution Rules:</strong> {{ opt.rules_text }}</p>
+                            </div>
                         </div>
                         <form action="/admin/delete_policy_option/{{ opt.id }}" method="POST">
-                            <button type="submit" class="text-red-500 text-xs hover:underline">Remove</button>
+                            <button type="submit" class="text-red-500 text-xs hover:underline bg-red-50 px-2 py-1 rounded">Remove</button>
                         </form>
                     </li>
                     {% endfor %}
@@ -79,20 +93,10 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow p-6">
-            <h2 class="text-xl font-bold mb-4 border-b pb-2 text-indigo-800">📡 Live Telemetry & Claim Ledger</h2>
+        <div class="bg-white rounded-xl shadow p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2 text-indigo-800">📋 Historical Claim Ledger</h2>
             <table class="w-full text-left text-sm">
-                <tr class="text-gray-500 border-b bg-gray-50"><th class="p-2">Type</th><th class="p-2">Details</th><th class="p-2">Status / Amount</th><th class="p-2">Live GPS / Time</th></tr>
-                
-                {% for order in live_orders %}
-                <tr class="border-b">
-                    <td class="p-2"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">Live Order</span></td>
-                    <td class="p-2 font-bold text-gray-700">Worker {{ order.worker_id }}: {{ order.origin_name }} → {{ order.dest_name }}</td>
-                    <td class="p-2">{{ order.status }}</td>
-                    <td class="p-2 font-mono text-blue-600">{{ order.current_lat or 'Pending' }}, {{ order.current_lon or 'Pending' }}</td>
-                </tr>
-                {% endfor %}
-                
+                <tr class="text-gray-500 border-b bg-gray-50"><th class="p-2">Type</th><th class="p-2">Details</th><th class="p-2">Amount Paid</th><th class="p-2">Time</th></tr>
                 {% for claim in claims %}
                 <tr class="border-b">
                     <td class="p-2"><span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Auto-Claim</span></td>
@@ -102,8 +106,30 @@
                 </tr>
                 {% endfor %}
             </table>
-            <script>setTimeout(() => location.reload(), 3000);</script>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-6">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h2 class="text-xl font-bold text-indigo-800">📡 Live Telemetry Monitor</h2>
+                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-bold animate-pulse">Live Sync Active</span>
+            </div>
+            
+            <table class="w-full text-left text-sm" id="live-tracking-table">
+                <thead>
+                    <tr class="text-gray-500 border-b bg-gray-50">
+                        <th class="p-2">Order ID</th>
+                        <th class="p-2">Worker ID</th>
+                        <th class="p-2">Route</th>
+                        <th class="p-2">Status</th>
+                        <th class="p-2">Live GPS</th>
+                    </tr>
+                </thead>
+                <tbody id="tracking-body">
+                    </tbody>
+            </table>
         </div>
     </div>
+
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
 </html>

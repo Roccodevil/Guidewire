@@ -9,11 +9,13 @@ from flask import (
     url_for,
 )
 
-from app.actuary_agent import calculate_weekly_premium, generate_policy_tiers, recommend_best_policy
+from app.actuary_agent import run_autonomous_actuary, recommend_best_policy
 from app.agent_graph import insurance_graph
 from app.db_models import ClaimLedger, DeliveryOrder, User, WeeklyPolicy, db, PolicyOption
+from app.dispatch_agent import auto_assign_order
 
 from app.services import get_tomtom_route_data
+import datetime as dt
 
 main_bp = Blueprint("main", __name__)
 
@@ -45,18 +47,33 @@ def logout():
 
 
 # --- WORKER DASHBOARD ---
-@main_bp.route("/")
+@main_bp.route('/')
 def dashboard():
     if 'user_id' not in session or session['role'] != 'worker': return redirect(url_for('main.login'))
     worker = User.query.get(session['user_id'])
     policy = WeeklyPolicy.query.filter_by(worker_id=worker.id, is_active=True).first()
     pending_orders = DeliveryOrder.query.filter_by(worker_id=worker.id, status="Pending").all()
-    
     policy_options = PolicyOption.query.all()
+    
+    time_left_pct = 0; days_left = 0
+    if policy:
+        import datetime as dt
+        end_date = policy.start_date + dt.timedelta(days=7)
+        days_left = max(0, (end_date - dt.datetime.utcnow()).days)
+        time_left_pct = max(0, min(100, (days_left / 7.0) * 100))
+        
+    from app.actuary_agent import recommend_best_policy
     recommended = recommend_best_policy(worker.wallet_balance, policy_options) if not policy else None
     
-    return render_template('dashboard.html', worker=worker, policy=policy, pending_orders=pending_orders, options=policy_options, recommended=recommended)
-
+    # NEW: Fetch REAL weather data for the dashboard
+    from app.services import get_weather_forecast
+    # Use worker's last known location, or default to Delhi
+    live_weather = get_weather_forecast(28.6139, 77.2090) 
+    
+    return render_template('dashboard.html', worker=worker, policy=policy, 
+                           pending_orders=pending_orders, options=policy_options, 
+                           recommended=recommended, days_left=days_left, 
+                           time_left_pct=time_left_pct, live_weather=live_weather)
 
 @main_bp.route("/buy_policy", methods=["POST"])
 def buy_policy():
@@ -64,9 +81,16 @@ def buy_policy():
     premium = float(request.form.get('premium'))
     worker = User.query.get(session['user_id'])
     
-    if worker.wallet_balance >= premium:
+    # Fetch the exact option to copy its terms/limits
+    option = PolicyOption.query.filter_by(tier=tier).first()
+    
+    if worker.wallet_balance >= premium and option:
         worker.wallet_balance -= premium
-        new_policy = WeeklyPolicy(worker_id=worker.id, tier=tier, total_premium=premium)
+        new_policy = WeeklyPolicy(
+            worker_id=worker.id, tier=tier, total_premium=premium,
+            coverage_limit=option.coverage_limit, terms_text=option.terms_text,
+            rules_text=option.rules_text
+        )
         db.session.add(new_policy)
         db.session.commit()
         return redirect(url_for('main.dashboard'))
@@ -129,6 +153,8 @@ def start_delivery():
         "route_data": {},
         "parametric_triggered": False,
         "fraud_score": 0.0,
+        "fraud_status": "PENDING",       # <--- ADD THIS
+        "xai_explanation": "",           # <--- ADD THIS
         "suggested_action": "",
     }
 
@@ -136,13 +162,11 @@ def start_delivery():
 
     if final_state["parametric_triggered"] and final_state["fraud_score"] < 0.5:
         policy = WeeklyPolicy.query.filter_by(worker_id=worker.id, is_active=True).first()
-        if policy:
-            new_claim = ClaimLedger(
-                policy_id=policy.id,
-                payout_amount=250.0,
-                reason=final_state["suggested_action"],
-            )
-            worker.wallet_balance += 250.0
+        if policy and policy.coverage_used < policy.coverage_limit:
+            payout = min(250.0, policy.coverage_limit - policy.coverage_used) # Don't exceed limit
+            policy.coverage_used += payout
+            new_claim = ClaimLedger(policy_id=policy.id, payout_amount=payout, reason=final_state["suggested_action"])
+            worker.wallet_balance += payout 
             db.session.add(new_claim)
 
     order.status = "Completed"
@@ -267,20 +291,26 @@ def update_policy():
 
 @main_bp.route('/api/generate_tiers', methods=['POST'])
 def generate_tiers():
-    PolicyOption.query.delete() # Clear old ones
+    # 1. Run the new autonomous ML pipeline
+    tiers_data = run_autonomous_actuary()
     
-    # Simulate AR and Weather data
-    tiers_data = generate_policy_tiers(ar_baseline_risk=42.5, weather_forecast="Heavy Monsoon Rains")
-    
+    # 2. Save the LLM-generated policies to the database
     for t in tiers_data:
+        # Prepend the profit margin to the description
+        business_reasoning = f"[Proj. Margin: {t.get('profit_margin_pct', 0)}%] {t.get('xai_actuarial_reasoning', t.get('xai', ''))}"
+        
         option = PolicyOption(
-            tier=t['tier'], premium=t['premium'], 
-            coverage_limit=t['coverage'], xai_description=t['xai']
+            tier=t.get('tier', 'Custom'), 
+            premium=t.get('premium', 0), 
+            coverage_limit=t.get('coverage', 0), 
+            xai_description=business_reasoning,
+            terms_text=t.get('terms', 'Standard platform terms apply.'),
+            rules_text=t.get('rules', 'Requires active GPS tracking.')
         )
         db.session.add(option)
+        
     db.session.commit()
     return redirect(url_for('main.admin_dashboard'))
-
 # --- LIVE TRACKING API (Called by Worker's JS while driving) ---
 @main_bp.route('/api/update_gps', methods=['POST'])
 def update_gps():
@@ -291,3 +321,60 @@ def update_gps():
         order.current_lon = data['lon']
         db.session.commit()
     return jsonify({"status": "GPS Updated"})
+
+@main_bp.route('/api/admin_live_data')
+def admin_live_data():
+    """Fetches live order tracking without refreshing the page."""
+    live_orders = DeliveryOrder.query.filter(DeliveryOrder.status.in_(['Pending', 'Active'])).all()
+    data = []
+    for order in live_orders:
+        data.append({
+            "id": order.id,
+            "worker_id": order.worker_id,
+            "route": f"{order.origin_name} → {order.dest_name}",
+            "status": order.status,
+            "lat": order.current_lat,
+            "lon": order.current_lon
+        })
+    return jsonify(data)
+
+@main_bp.route('/api/auto_dispatch', methods=['POST'])
+def auto_dispatch():
+    data = request.json
+    
+    # 1. Gather Order Details
+    order_details = {
+        "origin": data['origin_name'], 
+        "destination": data['dest_name'], 
+        "estimated_risk": "High Traffic Zone"
+    }
+    
+    # 2. Gather Worker Context (Who has policies?)
+    workers = User.query.filter_by(role='worker').all()
+    worker_context = []
+    for w in workers:
+        policy = WeeklyPolicy.query.filter_by(worker_id=w.id, is_active=True).first()
+        worker_context.append({
+            "id": w.id, 
+            "username": w.username, 
+            "has_active_policy": True if policy else False,
+            "policy_tier": policy.tier if policy else "None"
+        })
+        
+    # 3. Ask the AI Dispatcher who should get the order
+    decision = auto_assign_order(order_details, worker_context)
+    
+    # 4. Create the order in the database
+    new_order = DeliveryOrder(
+        worker_id=decision['selected_worker_id'],
+        origin_lat=data['origin_lat'], origin_lon=data['origin_lon'], origin_name=data['origin_name'],
+        dest_lat=data['dest_lat'], dest_lon=data['dest_lon'], dest_name=data['dest_name']
+    )
+    db.session.add(new_order)
+    db.session.commit()
+    
+    return jsonify({
+        "status": "Order Dispatched via AI",
+        "assigned_to": decision['selected_worker_id'],
+        "xai_audit": decision['xai_reasoning']
+    })

@@ -1,50 +1,47 @@
 <!DOCTYPE html>
 <html>
-<head><script src="https://cdn.tailwindcss.com"></script></head>
+<head>
+    <title>Platform Dispatcher</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
 <body class="bg-gray-100 p-8">
     <div class="max-w-4xl mx-auto bg-white rounded-xl shadow p-6">
         <h1 class="text-2xl font-bold mb-6">Zomato/Swiggy Dispatch (Delhi NCR)</h1>
         
-        <div class="bg-indigo-50 p-4 rounded mb-8 border border-indigo-200">
-            <h3 class="font-bold mb-2">Manual Dispatch</h3>
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <select id="origin" class="p-2 border rounded">
+        <div class="bg-indigo-50 p-6 rounded-xl mb-8 border border-indigo-200 shadow-sm">
+            <h3 class="font-bold mb-4 text-indigo-900 text-lg">🚀 AI Fleet Dispatcher</h3>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <select id="origin" class="p-3 border rounded shadow-inner">
                     <option value="28.6289,77.2065,Connaught Place">Origin: Connaught Place</option>
-                    <option value="28.5355,77.2410,Saket">Origin: Saket DLF Mall</option>
-                    <option value="28.5562,77.1000,Airport">Origin: IGI Airport Area</option>
+                    <option value="28.5355,77.2410,Saket DLF Mall">Origin: Saket DLF Mall</option>
                 </select>
-                <select id="dest" class="p-2 border rounded">
+                <select id="dest" class="p-3 border rounded shadow-inner">
                     <option value="28.4595,77.0266,Gurgaon Cyber Hub">Dest: Gurgaon Cyber Hub</option>
-                    <option value="28.6129,77.2295,India Gate">Dest: India Gate</option>
                     <option value="28.6505,77.2303,Chandni Chowk">Dest: Chandni Chowk</option>
                 </select>
             </div>
-            <p class="text-sm font-bold">Select Worker:</p>
-            <div class="flex space-x-2 mt-2">
+            
+            <div class="flex space-x-4">
+                <button onclick="autoDispatch(this)" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg text-md font-bold shadow-lg transition flex justify-center items-center">
+                    <span class="mr-2">🧠</span> Auto-Assign via Agentic AI
+                </button>
+            </div>
+            
+            <div id="dispatch-terminal" class="mt-4 bg-gray-900 text-green-400 font-mono text-sm p-4 rounded hidden shadow-inner"></div>
+        </div>
+            
+            <p class="text-sm font-bold text-gray-700">Select Worker ID to Dispatch:</p>
+            <div class="flex flex-wrap gap-2 mt-2">
                 {% for worker in workers %}
-                <button onclick="dispatch('{{ worker.id }}')" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-bold shadow">
-                    Send to {{ worker.username }}
+                <button onclick="dispatch(this)" data-worker-id="{{ worker.id }}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
+                    Send to #{{ worker.id }} ({{ worker.username }})
                 </button>
                 {% endfor %}
             </div>
         </div>
     </div>
 
-    <script>
-        async function dispatch(workerId) {
-            const org = document.getElementById('origin').value.split(',');
-            const dst = document.getElementById('dest').value.split(',');
-            
-            await fetch('/api/dispatch_order', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    worker_id: workerId, 
-                    origin_lat: parseFloat(org[0]), origin_lon: parseFloat(org[1]), origin_name: org[2],
-                    dest_lat: parseFloat(dst[0]), dest_lon: parseFloat(dst[1]), dest_name: dst[2]
-                })
-            });
-            alert("Live Route Dispatched! Worker is receiving coordinates.");
-        }
-    </script>
+    <script src="{{ url_for('static', filename='js/company.js') }}"></script>
 </body>
 </html>
