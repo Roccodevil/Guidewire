@@ -1,47 +1,41 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Platform Dispatcher</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-gray-100 p-8">
-    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow p-6">
-        <h1 class="text-2xl font-bold mb-6">Zomato/Swiggy Dispatch (Delhi NCR)</h1>
-        
-        <div class="bg-indigo-50 p-6 rounded-xl mb-8 border border-indigo-200 shadow-sm">
-            <h3 class="font-bold mb-4 text-indigo-900 text-lg">🚀 AI Fleet Dispatcher</h3>
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <select id="origin" class="p-3 border rounded shadow-inner">
-                    <option value="28.6289,77.2065,Connaught Place">Origin: Connaught Place</option>
-                    <option value="28.5355,77.2410,Saket DLF Mall">Origin: Saket DLF Mall</option>
-                </select>
-                <select id="dest" class="p-3 border rounded shadow-inner">
-                    <option value="28.4595,77.0266,Gurgaon Cyber Hub">Dest: Gurgaon Cyber Hub</option>
-                    <option value="28.6505,77.2303,Chandni Chowk">Dest: Chandni Chowk</option>
-                </select>
-            </div>
-            
-            <div class="flex space-x-4">
-                <button onclick="autoDispatch(this)" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg text-md font-bold shadow-lg transition flex justify-center items-center">
-                    <span class="mr-2">🧠</span> Auto-Assign via Agentic AI
-                </button>
-            </div>
-            
-            <div id="dispatch-terminal" class="mt-4 bg-gray-900 text-green-400 font-mono text-sm p-4 rounded hidden shadow-inner"></div>
-        </div>
-            
-            <p class="text-sm font-bold text-gray-700">Select Worker ID to Dispatch:</p>
-            <div class="flex flex-wrap gap-2 mt-2">
-                {% for worker in workers %}
-                <button onclick="dispatch(this)" data-worker-id="{{ worker.id }}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
-                    Send to #{{ worker.id }} ({{ worker.username }})
-                </button>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
+<body class="page-shell page-company">
+    <div id="react-root"></div>
 
-    <script src="{{ url_for('static', filename='js/company.js') }}"></script>
+    <script>
+        window.__COMPANY_DATA__ = {
+            workers: [
+                {% for worker in workers %}
+                {
+                    id: {{ worker.id }},
+                    username: {{ worker.username | tojson }}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ],
+            orders: [
+                {% for order in orders %}
+                {
+                    id: {{ order.id }},
+                    worker_id: {{ order.worker_id }},
+                    status: {{ order.status | tojson }}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ]
+        };
+    </script>
+    <script type="text/babel" data-presets="react" src="{{ url_for('static', filename='js/company.js') }}"></script>
 </body>
 </html>

@@ -13,22 +13,41 @@ from app.actuary_agent import run_autonomous_actuary, recommend_best_policy
 from app.agent_graph import insurance_graph
 from app.db_models import ClaimLedger, DeliveryOrder, User, WeeklyPolicy, db, PolicyOption
 from app.dispatch_agent import auto_assign_order
+from sqlalchemy.exc import OperationalError
 
 from app.services import get_tomtom_route_data
 import datetime as dt
+from collections import defaultdict
 
 main_bp = Blueprint("main", __name__)
 
 
 # --- AUTHENTICATION ---
-@main_bp.route("/login", methods=["GET", "POST"])
+@main_bp.route("/login")
 def login():
+    return render_template("login.html", login_role=None)
+
+
+@main_bp.route("/login/<role>", methods=["GET", "POST"])
+def login_role(role):
+    role = role.lower()
+    if role not in {"worker", "company", "admin"}:
+        return redirect(url_for("main.login"))
+
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-        user = User.query.filter_by(username=username).first()
+        try:
+            user = User.query.filter_by(username=username).first()
+        except OperationalError:
+            db.session.rollback()
+            flash("Database connection temporarily unavailable. Please retry in a few seconds.")
+            return render_template("login.html", login_role=role), 503
 
         if user and user.check_password(password):
+            if user.role != role:
+                flash(f"This account is not a {role} account. Please use the correct login portal.")
+                return render_template("login.html", login_role=role), 403
             session["user_id"] = user.id
             session["role"] = user.role
             if user.role == "admin":
@@ -37,7 +56,7 @@ def login():
                 return redirect(url_for("main.company_dashboard"))
             return redirect(url_for("main.dashboard"))
         flash("Invalid credentials")
-    return render_template("login.html")
+    return render_template("login.html", login_role=role)
 
 
 @main_bp.route("/logout")
@@ -109,6 +128,26 @@ def reject_order():
     return jsonify({"error": "Order not found"}), 404
 
 
+@main_bp.route('/api/worker_pending_orders')
+def worker_pending_orders():
+    if 'user_id' not in session or session.get('role') != 'worker':
+        return jsonify({"error": "Unauthorized"}), 401
+
+    orders = DeliveryOrder.query.filter_by(worker_id=session['user_id'], status="Pending").order_by(DeliveryOrder.id.desc()).all()
+    return jsonify([
+        {
+            "id": order.id,
+            "origin_name": order.origin_name,
+            "origin_lat": order.origin_lat,
+            "origin_lon": order.origin_lon,
+            "dest_name": order.dest_name,
+            "dest_lat": order.dest_lat,
+            "dest_lon": order.dest_lon,
+        }
+        for order in orders
+    ])
+
+
 # --- COMPANY DASHBOARD (Zomato/Swiggy Simulator) ---
 @main_bp.route("/company")
 def company_dashboard():
@@ -124,6 +163,8 @@ def dispatch_order():
     data = request.json
     new_order = DeliveryOrder(
         worker_id=data["worker_id"],
+        origin_name=data.get("origin_name", "Pinned Origin"),
+        dest_name=data.get("dest_name", "Pinned Destination"),
         origin_lat=data["origin_lat"],
         origin_lon=data["origin_lon"],
         dest_lat=data["dest_lat"],
@@ -256,6 +297,7 @@ def admin_dashboard():
     
     workers = User.query.filter_by(role='worker').all()
     policy_options = PolicyOption.query.all()
+    all_worker_policies = WeeklyPolicy.query.all()
     active_worker_policies = WeeklyPolicy.query.filter_by(is_active=True).all()
     claims = ClaimLedger.query.order_by(ClaimLedger.timestamp.desc()).all()
     live_orders = DeliveryOrder.query.filter(DeliveryOrder.status.in_(['Pending', 'Active'])).all()
@@ -263,6 +305,140 @@ def admin_dashboard():
     total_premiums = sum([p.total_premium for p in active_worker_policies])
     total_payouts = sum([c.payout_amount for c in claims])
     net_profit = total_premiums - total_payouts
+
+    worker_by_id = {w.id: w for w in workers}
+    policy_by_id = {p.id: p for p in all_worker_policies}
+
+    worker_claim_amount = defaultdict(float)
+    worker_claim_count = defaultdict(int)
+    tier_claim_amount = defaultdict(float)
+    claims_daily = defaultdict(float)
+
+    for claim in claims:
+        policy = policy_by_id.get(claim.policy_id)
+        if not policy:
+            continue
+        worker_claim_amount[policy.worker_id] += claim.payout_amount
+        worker_claim_count[policy.worker_id] += 1
+        tier_claim_amount[policy.tier] += claim.payout_amount
+        day_key = claim.timestamp.strftime("%Y-%m-%d")
+        claims_daily[day_key] += claim.payout_amount
+
+    worker_coverage_usage = []
+    total_coverage_limit = 0.0
+    total_coverage_used = 0.0
+
+    utilization_buckets = {
+        "0-10%": 0,
+        "10-25%": 0,
+        "25-50%": 0,
+        "50-75%": 0,
+        "75-100%": 0,
+        ">100%": 0,
+    }
+
+    for policy in active_worker_policies:
+        w = worker_by_id.get(policy.worker_id)
+        if not w:
+            continue
+        total_coverage_limit += float(policy.coverage_limit or 0)
+        total_coverage_used += float(policy.coverage_used or 0)
+        utilization_pct = 0.0
+        if policy.coverage_limit:
+            utilization_pct = (float(policy.coverage_used or 0) / float(policy.coverage_limit)) * 100
+
+        if utilization_pct <= 10:
+            utilization_buckets["0-10%"] += 1
+        elif utilization_pct <= 25:
+            utilization_buckets["10-25%"] += 1
+        elif utilization_pct <= 50:
+            utilization_buckets["25-50%"] += 1
+        elif utilization_pct <= 75:
+            utilization_buckets["50-75%"] += 1
+        elif utilization_pct <= 100:
+            utilization_buckets["75-100%"] += 1
+        else:
+            utilization_buckets[">100%"] += 1
+
+        worker_coverage_usage.append({
+            "worker_id": w.id,
+            "username": w.username,
+            "tier": policy.tier,
+            "coverage_used": float(policy.coverage_used or 0),
+            "coverage_limit": float(policy.coverage_limit or 0),
+            "utilization_pct": round(utilization_pct, 2),
+            "claim_count": worker_claim_count.get(w.id, 0),
+            "claim_amount": round(worker_claim_amount.get(w.id, 0.0), 2),
+        })
+
+    worker_coverage_usage.sort(key=lambda x: x["coverage_used"], reverse=True)
+
+    tier_performance_map = defaultdict(lambda: {
+        "tier": "",
+        "active_policies": 0,
+        "premium_collected": 0.0,
+        "coverage_used": 0.0,
+        "coverage_limit": 0.0,
+        "claim_paid": 0.0,
+    })
+
+    for policy in active_worker_policies:
+        t = tier_performance_map[policy.tier]
+        t["tier"] = policy.tier
+        t["active_policies"] += 1
+        t["premium_collected"] += float(policy.total_premium or 0)
+        t["coverage_used"] += float(policy.coverage_used or 0)
+        t["coverage_limit"] += float(policy.coverage_limit or 0)
+
+    for tier_name, payout in tier_claim_amount.items():
+        t = tier_performance_map[tier_name]
+        t["tier"] = tier_name
+        t["claim_paid"] = float(payout)
+
+    tier_performance = sorted(
+        [
+            {
+                **v,
+                "premium_collected": round(v["premium_collected"], 2),
+                "coverage_used": round(v["coverage_used"], 2),
+                "coverage_limit": round(v["coverage_limit"], 2),
+                "claim_paid": round(v["claim_paid"], 2),
+            }
+            for v in tier_performance_map.values()
+            if v["tier"]
+        ],
+        key=lambda item: item["premium_collected"],
+        reverse=True,
+    )
+
+    claims_trend = [
+        {"date": date_key, "amount": round(amount, 2)}
+        for date_key, amount in sorted(claims_daily.items())
+    ]
+
+    loss_ratio_pct = 0.0
+    if total_premiums > 0:
+        loss_ratio_pct = (total_payouts / total_premiums) * 100
+
+    utilization_pct = 0.0
+    if total_coverage_limit > 0:
+        utilization_pct = (total_coverage_used / total_coverage_limit) * 100
+
+    analytics = {
+        "total_coverage_limit": round(total_coverage_limit, 2),
+        "total_coverage_used": round(total_coverage_used, 2),
+        "coverage_utilization_pct": round(utilization_pct, 2),
+        "total_claim_count": len(claims),
+        "average_claim_amount": round((total_payouts / len(claims)) if claims else 0.0, 2),
+        "loss_ratio_pct": round(loss_ratio_pct, 2),
+        "worker_coverage_usage": worker_coverage_usage,
+        "worker_utilization_buckets": [
+            {"bucket": k, "count": v}
+            for k, v in utilization_buckets.items()
+        ],
+        "tier_performance": tier_performance,
+        "claims_trend": claims_trend,
+    }
     
     return render_template(
         'admin.html',
@@ -274,6 +450,7 @@ def admin_dashboard():
         total_premiums=total_premiums,
         total_payouts=total_payouts,
         net_profit=net_profit,
+        admin_analytics=analytics,
     )
 
 # --- ADD THIS TO ADMIN ROUTES FOR MANUAL POLICY OVERRIDE ---

@@ -1,135 +1,58 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Admin Console</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-gray-100 p-8 font-sans">
-    <div class="max-w-7xl mx-auto">
-        <h1 class="text-3xl font-bold text-gray-800 mb-8">System Admin Console</h1>
+<body class="page-shell page-admin">
+    <div id="react-root"></div>
 
-        <div class="grid grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-xl shadow border-l-4 border-blue-500">
-                <p class="text-sm text-gray-500 font-bold">Total Premiums Collected</p>
-                <p class="text-3xl font-bold text-blue-600">₹{{ total_premiums }}</p>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow border-l-4 border-red-500">
-                <p class="text-sm text-gray-500 font-bold">Parametric Claims Paid</p>
-                <p class="text-3xl font-bold text-red-600">₹{{ total_payouts }}</p>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow border-l-4 {% if net_profit >= 0 %}border-green-500{% else %}border-red-500{% endif %}">
-                <p class="text-sm text-gray-500 font-bold">Platform Net Risk Balance</p>
-                <p class="text-3xl font-bold {% if net_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">₹{{ net_profit }}</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-8 mb-8">
-            <div class="bg-white rounded-xl shadow p-6">
-                <h2 class="text-xl font-bold mb-4 border-b pb-2">👥 Fleet Management</h2>
-                <form action="/admin/add_worker" method="POST" class="flex space-x-2 mb-4">
-                    <input type="text" name="username" placeholder="Worker Username" class="border rounded px-2 py-1 flex-1 text-sm" required>
-                    <input type="password" name="password" placeholder="Password" class="border rounded px-2 py-1 w-24 text-sm" required>
-                    <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded text-sm font-bold">Add</button>
-                </form>
-                <table class="w-full text-left text-sm">
-                    <tr class="text-gray-500 border-b"><th class="pb-2">ID</th><th class="pb-2">Username</th><th class="pb-2">Wallet</th><th class="pb-2">Action</th></tr>
-                    {% for w in workers %}
-                    <tr class="border-b">
-                        <td class="py-2">#{{ w.id }}</td>
-                        <td class="py-2 font-bold">{{ w.username }}</td>
-                        <td class="py-2 text-green-600">₹{{ w.wallet_balance }}</td>
-                        <td class="py-2">
-                            <form action="/admin/delete_worker/{{ w.id }}" method="POST">
-                                <button type="submit" class="text-red-500 text-xs hover:underline">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </table>
-            </div>
-
-            <div class="bg-white rounded-xl shadow p-6">
-                <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h2 class="text-xl font-bold">⚙️ Policy Marketplace Options</h2>
-                    <form action="/api/generate_tiers" method="POST">
-                        <button type="submit" class="bg-purple-600 text-white text-xs px-3 py-1 rounded font-bold">Auto-Gen (XAI)</button>
-                    </form>
-                </div>
-                <form action="/admin/add_policy" method="POST" class="mb-4 bg-gray-50 p-3 rounded text-sm">
-                    <div class="grid grid-cols-3 gap-2 mb-2">
-                        <input type="text" name="tier" placeholder="Tier Name (e.g. Ultra)" class="border rounded px-2 py-1" required>
-                        <input type="number" name="premium" placeholder="Premium ₹" class="border rounded px-2 py-1" required>
-                        <input type="number" name="coverage" placeholder="Coverage Limit ₹" class="border rounded px-2 py-1" required>
-                    </div>
-                    <div class="flex space-x-2">
-                        <input type="text" name="description" placeholder="Description/XAI Reasoning" class="border rounded px-2 py-1 flex-1" required>
-                        <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded font-bold">Create</button>
-                    </div>
-                </form>
-                <ul class="text-sm">
-                    {% for opt in policy_options %}
-                    <li class="border-b py-4 flex justify-between items-start">
-                        <div class="pr-4">
-                            <span class="font-bold text-indigo-900 text-lg">{{ opt.tier }}</span> 
-                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded ml-2">₹{{ opt.premium }}/wk</span>
-                            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded ml-2">Cover: ₹{{ opt.coverage_limit }}</span>
-                            
-                            <div class="mt-2 bg-gray-50 p-3 rounded border border-gray-200">
-                                <p class="text-xs text-gray-800 font-mono"><strong class="text-indigo-600">Actuarial Underwriting:</strong> {{ opt.xai_description }}</p>
-                            </div>
-                            
-                            <div class="mt-2 text-xs text-gray-500">
-                                <p><strong>Terms:</strong> {{ opt.terms_text }}</p>
-                                <p><strong>Execution Rules:</strong> {{ opt.rules_text }}</p>
-                            </div>
-                        </div>
-                        <form action="/admin/delete_policy_option/{{ opt.id }}" method="POST">
-                            <button type="submit" class="text-red-500 text-xs hover:underline bg-red-50 px-2 py-1 rounded">Remove</button>
-                        </form>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow p-6 mb-8">
-            <h2 class="text-xl font-bold mb-4 border-b pb-2 text-indigo-800">📋 Historical Claim Ledger</h2>
-            <table class="w-full text-left text-sm">
-                <tr class="text-gray-500 border-b bg-gray-50"><th class="p-2">Type</th><th class="p-2">Details</th><th class="p-2">Amount Paid</th><th class="p-2">Time</th></tr>
-                {% for claim in claims %}
-                <tr class="border-b">
-                    <td class="p-2"><span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Auto-Claim</span></td>
-                    <td class="p-2 text-gray-600 text-xs">{{ claim.reason }}</td>
-                    <td class="p-2 font-bold text-red-600">₹{{ claim.payout_amount }} Paid</td>
-                    <td class="p-2 text-xs text-gray-500">{{ claim.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-                </tr>
+    <script>
+        window.__ADMIN_DATA__ = {
+            total_premiums: {{ total_premiums }},
+            total_payouts: {{ total_payouts }},
+            net_profit: {{ net_profit }},
+            workers: [
+                {% for w in workers %}
+                {
+                    id: {{ w.id }},
+                    username: {{ w.username | tojson }},
+                    wallet_balance: {{ w.wallet_balance }}
+                }{% if not loop.last %},{% endif %}
                 {% endfor %}
-            </table>
-        </div>
-
-        <div class="bg-white rounded-xl shadow p-6">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <h2 class="text-xl font-bold text-indigo-800">📡 Live Telemetry Monitor</h2>
-                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-bold animate-pulse">Live Sync Active</span>
-            </div>
-            
-            <table class="w-full text-left text-sm" id="live-tracking-table">
-                <thead>
-                    <tr class="text-gray-500 border-b bg-gray-50">
-                        <th class="p-2">Order ID</th>
-                        <th class="p-2">Worker ID</th>
-                        <th class="p-2">Route</th>
-                        <th class="p-2">Status</th>
-                        <th class="p-2">Live GPS</th>
-                    </tr>
-                </thead>
-                <tbody id="tracking-body">
-                    </tbody>
-            </table>
-        </div>
-    </div>
-
-    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+            ],
+            policy_options: [
+                {% for opt in policy_options %}
+                {
+                    id: {{ opt.id }},
+                    tier: {{ opt.tier | tojson }},
+                    premium: {{ opt.premium }},
+                    coverage_limit: {{ opt.coverage_limit }},
+                    xai_description: {{ opt.xai_description | tojson }},
+                    terms_text: {{ opt.terms_text | tojson }},
+                    rules_text: {{ opt.rules_text | tojson }}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ],
+            claims: [
+                {% for claim in claims %}
+                {
+                    reason: {{ claim.reason | tojson }},
+                    payout_amount: {{ claim.payout_amount }},
+                    timestamp: {{ claim.timestamp.strftime('%Y-%m-%d %H:%M') | tojson }}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ],
+            analytics: {{ admin_analytics | tojson }}
+        };
+    </script>
+    <script type="text/babel" data-presets="react" src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
 </html>

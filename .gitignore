@@ -3,3 +3,5 @@ venv/*
 .env
 app/__pycache__/*
 reset_db.py
+.vscode/*
+.venv/*

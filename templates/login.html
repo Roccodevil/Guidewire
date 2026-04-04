@@ -1,15 +1,24 @@
 <!DOCTYPE html>
-<html>
-<head><script src="https://cdn.tailwindcss.com"></script></head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-xl shadow-lg w-96">
-        <h2 class="text-2xl font-bold mb-6 text-center">Gig Shield Login</h2>
-        <form method="POST" action="/login">
-            <input type="text" name="username" placeholder="Username" class="w-full border p-2 mb-4 rounded" required>
-            <input type="password" name="password" placeholder="Password" class="w-full border p-2 mb-6 rounded" required>
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded">Login</button>
-        </form>
-        <p class="text-xs text-gray-500 mt-4 text-center">Demo Accounts: worker1, admin, company (Pass: 1234)</p>
-    </div>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guidewire Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="page-shell page-login">
+    <div id="react-root"></div>
+
+    <script>
+        window.__LOGIN_DATA__ = {
+            flashes: {{ get_flashed_messages() | tojson }},
+            login_role: {{ login_role | default(None) | tojson }}
+        };
+    </script>
+    <script type="text/babel" data-presets="react" src="{{ url_for('static', filename='js/login.js') }}"></script>
 </body>
 </html>
