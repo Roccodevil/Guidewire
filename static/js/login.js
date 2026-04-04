@@ -30,29 +30,46 @@ const ROLE_META = {
 const THEME_META = {
     worker: {
         title: "Worker Portal",
-        accent: "#0b63f6",
-        accentSoft: "rgba(11, 99, 246, 0.12)",
-        glow: "rgba(11, 99, 246, 0.20)",
+        accent: "#1f7a5e",
+        accentSoft: "rgba(31, 122, 94, 0.12)",
+        glow: "rgba(31, 122, 94, 0.20)",
         image: "/static/images/worker.png",
-        background: "linear-gradient(135deg, #f3f7ff 0%, #eef5ff 48%, #f7fbff 100%)"
+        background: "linear-gradient(135deg, #f2f8f4 0%, #edf6f0 48%, #f8fbf6 100%)"
     },
     company: {
         title: "Company Portal",
-        accent: "#0a9b8c",
-        accentSoft: "rgba(10, 155, 140, 0.12)",
-        glow: "rgba(10, 155, 140, 0.20)",
+        accent: "#2c8f7c",
+        accentSoft: "rgba(44, 143, 124, 0.12)",
+        glow: "rgba(44, 143, 124, 0.20)",
         image: "/static/images/company.png",
-        background: "linear-gradient(135deg, #f3fbfb 0%, #eef8f7 48%, #f7fcfc 100%)"
+        background: "linear-gradient(135deg, #f1fbf8 0%, #edf8f5 48%, #f8fcfb 100%)"
     },
     admin: {
         title: "Admin Portal",
-        accent: "#083b92",
-        accentSoft: "rgba(8, 59, 146, 0.12)",
-        glow: "rgba(8, 59, 146, 0.22)",
+        accent: "#396b4b",
+        accentSoft: "rgba(57, 107, 75, 0.12)",
+        glow: "rgba(57, 107, 75, 0.22)",
         image: "/static/images/admin.png",
-        background: "linear-gradient(135deg, #f4f7ff 0%, #eef3ff 48%, #fafcff 100%)"
+        background: "linear-gradient(135deg, #f4f8f1 0%, #eff6ec 48%, #fbfcf8 100%)"
     }
 };
+
+function BrandTitle({ text }) {
+    return (
+        <h1 className="brand-title brand-title-hover" aria-label={text}>
+            {text.split("").map((letter, index) => (
+                <span
+                    key={`${letter}-${index}`}
+                    className={`brand-letter ${letter === " " ? "brand-space" : ""}`}
+                    style={{ "--delay": `${index * 35}ms` }}
+                    aria-hidden="true"
+                >
+                    {letter === " " ? "\u00A0" : letter}
+                </span>
+            ))}
+        </h1>
+    );
+}
 
 function LoginApp() {
     const data = window.__LOGIN_DATA__ || { flashes: [], login_role: null };
@@ -87,8 +104,10 @@ function LoginApp() {
                 <section className="chooser-shell chooser-hero">
                     <div className="chooser-head">
                         <div>
+                            <BrandTitle text="Gig Shield" />
                             <span className="role-badge">Secure Access</span>
-                            <h1>Choose Your Portal</h1>
+                            <h2>Choose Your Portal</h2>
+                            <p className="subtitle">Gig Shield secures worker, company, and admin access in one platform.</p>
                         </div>
                     </div>
 
@@ -139,8 +158,9 @@ function LoginApp() {
             <section className="auth-panel role-login-panel">
                 <div className="role-panel-head">
                     <div>
+                        <BrandTitle text="Gig Shield" />
                         <span className="role-badge">{currentMeta.badge}</span>
-                        <h1>{currentMeta.title}</h1>
+                        <h2>{currentMeta.title}</h2>
                         <p className="auth-subtitle">{currentMeta.subtitle}</p>
                     </div>
                     <a className="back-link" href="/login">Change portal</a>

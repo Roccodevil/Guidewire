@@ -270,6 +270,89 @@ h1, h2, h3, h4, p {
     letter-spacing: 0.2px;
 }
 
+.brand-title {
+    font-size: clamp(2rem, 3.8vw, 3.3rem);
+    line-height: 1.12;
+    letter-spacing: -0.05em;
+    font-weight: 900;
+    margin-bottom: 12px;
+    padding: 0.16em 0.35em 0.2em;
+    color: #163b86;
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    border-radius: 14px;
+    background: transparent;
+}
+
+.role-panel-head .brand-title {
+    margin-bottom: 6px;
+}
+
+.brand-title-hover {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0;
+    user-select: none;
+    padding-bottom: 2px;
+    max-width: 100%;
+    width: 100%;
+}
+
+.brand-letter {
+    display: inline-block;
+    padding: 0 0.01em;
+    transition: transform 0.22s ease, color 0.22s ease, text-shadow 0.22s ease, filter 0.22s ease;
+    background: linear-gradient(180deg, #0b63f6 0%, #3a7cff 45%, #6ea2ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+.brand-letter:hover {
+    transform: translateY(-5px) scale(1.08);
+    filter: drop-shadow(0 8px 14px rgba(11, 99, 246, 0.24));
+}
+
+.brand-title-hover:hover .brand-letter {
+    color: transparent;
+}
+
+.brand-title-hover:hover .brand-letter:nth-child(1) { transition-delay: 0ms; }
+.brand-title-hover:hover .brand-letter:nth-child(2) { transition-delay: 35ms; }
+.brand-title-hover:hover .brand-letter:nth-child(3) { transition-delay: 70ms; }
+.brand-title-hover:hover .brand-letter:nth-child(4) { transition-delay: 105ms; }
+.brand-title-hover:hover .brand-letter:nth-child(5) { transition-delay: 140ms; }
+.brand-title-hover:hover .brand-letter:nth-child(6) { transition-delay: 175ms; }
+.brand-title-hover:hover .brand-letter:nth-child(7) { transition-delay: 210ms; }
+.brand-title-hover:hover .brand-letter:nth-child(8) { transition-delay: 245ms; }
+.brand-title-hover:hover .brand-letter:nth-child(9) { transition-delay: 280ms; }
+.brand-title-hover:hover .brand-letter:nth-child(10) { transition-delay: 315ms; }
+.brand-title-hover:hover .brand-letter:nth-child(11) { transition-delay: 350ms; }
+
+.brand-space {
+    width: 0.35em;
+}
+
+.chooser-head h2,
+.role-panel-head h2 {
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+}
+
+.chooser-head > div,
+.role-panel-head > div {
+    width: 100%;
+    min-width: 0;
+}
+
+.chooser-head,
+.role-panel-head {
+    overflow: visible;
+}
+
 .subtitle,
 .auth-subtitle,
 .panel p,
