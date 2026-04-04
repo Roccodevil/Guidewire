@@ -272,11 +272,11 @@ h1, h2, h3, h4, p {
 
 .brand-title {
     font-size: clamp(2rem, 3.8vw, 3.3rem);
-    line-height: 1.12;
+    line-height: 1.4;
     letter-spacing: -0.05em;
     font-weight: 900;
     margin-bottom: 12px;
-    padding: 0.16em 0.35em 0.2em;
+    padding: 0.16em 0.35em 0.4em;
     color: #163b86;
     display: block;
     width: fit-content;
@@ -298,6 +298,7 @@ h1, h2, h3, h4, p {
     padding-bottom: 2px;
     max-width: 100%;
     width: 100%;
+    overflow: visible;
 }
 
 .brand-letter {
