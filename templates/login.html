@@ -15,7 +15,7 @@
 
     <script>
         window.__LOGIN_DATA__ = {
-            flashes: {{ get_flashed_messages() | tojson }},
+            flashes: {{ get_flashed_messages(with_categories=true) | tojson }},
             login_role: {{ login_role | default(None) | tojson }}
         };
     </script>

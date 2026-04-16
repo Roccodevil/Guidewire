@@ -21,42 +21,102 @@ from collections import defaultdict
 
 main_bp = Blueprint("main", __name__)
 
+PROTECTED_PAGE_ENDPOINTS = {
+    "main.dashboard",
+    "main.company_dashboard",
+    "main.admin_dashboard",
+}
 
-# --- AUTHENTICATION ---
-@main_bp.route("/login")
-def login():
-    return render_template("login.html", login_role=None)
 
+@main_bp.before_app_request
+def enforce_fresh_page_login():
+    endpoint = request.endpoint
+    if not endpoint or endpoint not in PROTECTED_PAGE_ENDPOINTS:
+        return None
 
-@main_bp.route("/login/<role>", methods=["GET", "POST"])
-def login_role(role):
-    role = role.lower()
-    if role not in {"worker", "company", "admin"}:
+    # If a page login was already consumed, force re-authentication on next page visit/refresh.
+    if session.get("auth_consumed"):
+        session.clear()
         return redirect(url_for("main.login"))
 
+    return None
+
+
+@main_bp.after_app_request
+def apply_security_response_headers(response):
+    # Disable browser caching so authenticated pages are not reused after refresh/back.
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+
+    endpoint = request.endpoint
+    if (
+        endpoint in PROTECTED_PAGE_ENDPOINTS
+        and request.method == "GET"
+        and response.status_code == 200
+        and response.content_type.startswith("text/html")
+        and "user_id" in session
+    ):
+        session["auth_consumed"] = True
+
+    return response
+
+
+# --- AUTHENTICATION ---
+@main_bp.route("/login", methods=["GET", "POST"])
+def login():
+    allowed_roles = {"worker", "company", "admin"}
+    requested_role = (request.args.get("role") or "").lower()
+    login_role = requested_role if requested_role in allowed_roles else "worker"
+
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        role = (request.form.get("role") or "").lower()
+        username = (request.form.get("username") or "").strip()
+        password = request.form.get("password") or ""
+
+        if role not in allowed_roles:
+            flash("Please choose a valid sign-in role.")
+            return redirect(url_for("main.login", role=login_role))
+
+        login_role = role
+
+        if not username or not password:
+            flash("Username and password are required.")
+            return redirect(url_for("main.login", role=login_role))
+
         try:
             user = User.query.filter_by(username=username).first()
         except OperationalError:
             db.session.rollback()
             flash("Database connection temporarily unavailable. Please retry in a few seconds.")
-            return render_template("login.html", login_role=role), 503
+            return redirect(url_for("main.login", role=login_role))
 
         if user and user.check_password(password):
             if user.role != role:
-                flash(f"This account is not a {role} account. Please use the correct login portal.")
-                return render_template("login.html", login_role=role), 403
+                flash(f"This account is not a {role} account. Please use the correct sign-in role.")
+                return redirect(url_for("main.login", role=login_role))
             session["user_id"] = user.id
             session["role"] = user.role
+            session["auth_consumed"] = False
             if user.role == "admin":
                 return redirect(url_for("main.admin_dashboard"))
             if user.role == "company":
                 return redirect(url_for("main.company_dashboard"))
             return redirect(url_for("main.dashboard"))
+
         flash("Invalid credentials")
-    return render_template("login.html", login_role=role)
+        return redirect(url_for("main.login", role=login_role))
+
+    return render_template("login.html", login_role=login_role)
+
+
+@main_bp.route("/login/<role>", methods=["GET"])
+def login_role(role):
+    role = role.lower()
+    if role not in {"worker", "company", "admin"}:
+        return redirect(url_for("main.login"))
+
+    return redirect(url_for("main.login", role=role))
 
 
 @main_bp.route("/logout")

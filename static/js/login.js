@@ -2,25 +2,22 @@ const { useEffect, useMemo, useState } = React;
 
 const ROLE_META = {
     worker: {
-        title: "Worker Portal",
+        title: "Worker Login",
         subtitle: "Track deliveries, accept routes, and manage your weekly shield.",
-        href: "/login/worker",
         badge: "Worker",
         theme: "worker",
         focusTitle: "Worker dashboard"
     },
     company: {
-        title: "Company Portal",
+        title: "Company Login",
         subtitle: "Dispatch deliveries, choose routes, and manage active workers.",
-        href: "/login/company",
         badge: "Company",
         theme: "company",
         focusTitle: "Fleet control"
     },
     admin: {
-        title: "Admin Portal",
+        title: "Admin Login",
         subtitle: "Manage workers, policy tiers, and live telemetry in one place.",
-        href: "/login/admin",
         badge: "Admin",
         theme: "admin",
         focusTitle: "System oversight"
@@ -72,23 +69,21 @@ function BrandTitle({ text }) {
 }
 
 function LoginApp() {
-    const data = window.__LOGIN_DATA__ || { flashes: [], login_role: null };
-    const currentRole = data.login_role;
-    const currentMeta = currentRole ? ROLE_META[currentRole] : null;
+    const data = window.__LOGIN_DATA__ || { flashes: [], login_role: "worker" };
+    const initialRole = data.login_role && ROLE_META[data.login_role] ? data.login_role : "worker";
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [activeRole, setActiveRole] = useState(null);
+    const [role, setRole] = useState(initialRole);
 
     useEffect(() => {
         gsap.from(".auth-panel", { y: 30, opacity: 0, duration: 0.8, ease: "power3.out" });
-        gsap.from(".role-card", { y: 18, opacity: 0, duration: 0.65, stagger: 0.08, delay: 0.1, ease: "power2.out" });
+        gsap.from(".role-switch", { y: 18, opacity: 0, duration: 0.65, delay: 0.1, ease: "power2.out" });
         gsap.from(".bg-orb", { scale: 0.6, opacity: 0, duration: 1.2, stagger: 0.08, ease: "sine.out" });
     }, []);
 
-    const roleCards = useMemo(() => Object.entries(ROLE_META), []);
-    const themeRole = activeRole || "worker";
-    const theme = THEME_META[themeRole];
-    const roleTheme = currentRole ? THEME_META[currentRole] : theme;
+    const roleOptions = useMemo(() => Object.entries(ROLE_META), []);
+    const currentMeta = ROLE_META[role];
+    const theme = THEME_META[role];
 
     const pageStyle = {
         "--theme-accent": theme.accent,
@@ -98,72 +93,18 @@ function LoginApp() {
         background: theme.background
     };
 
-    if (!currentRole) {
-        return (
-            <main className="auth-layout role-chooser-layout" style={pageStyle}>
-                <section className="chooser-shell chooser-hero">
-                    <div className="chooser-head">
-                        <div>
-                            <BrandTitle text="Gig Shield" />
-                            <span className="role-badge">Secure Access</span>
-                            <h2>Choose Your Portal</h2>
-                            <p className="subtitle">Gig Shield secures worker, company, and admin access in one platform.</p>
-                        </div>
-                    </div>
-
-                    {data.flashes.length > 0 && (
-                        <div className="flash-box">
-                            {data.flashes.map((msg, idx) => (
-                                <p key={idx}>{msg}</p>
-                            ))}
-                        </div>
-                    )}
-
-                    <div className={`role-stage ${activeRole ? `active-${activeRole}` : ""}`}>
-                        {roleCards.map(([role, meta]) => (
-                            <div
-                                className="role-card-wrap"
-                                key={role}
-                                onMouseEnter={() => setActiveRole(role)}
-                                onMouseLeave={() => setActiveRole(null)}
-                            >
-                                <a className={`role-card ${activeRole === role ? "active" : activeRole ? "inactive" : ""} role-${role}`} href={meta.href}>
-                                    <span className="role-badge">{meta.badge}</span>
-                                    <h2>{meta.title}</h2>
-                                    <p>{meta.subtitle}</p>
-                                    <div className="role-card-foot">
-                                        <span className="role-link">Open login</span>
-                                        <span className="role-focus">{meta.focusTitle}</span>
-                                    </div>
-                                </a>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            </main>
-        );
-    }
-
     return (
-        <main
-            className="auth-layout role-login-layout"
-            style={{
-                "--theme-accent": roleTheme.accent,
-                "--theme-accent-soft": roleTheme.accentSoft,
-                "--theme-glow": roleTheme.glow,
-                "--corner-image": `url(${roleTheme.image})`,
-                background: roleTheme.background
-            }}
-        >
+        <main className="auth-layout role-login-layout" style={pageStyle}>
+            <div className="bg-orb orb-a" aria-hidden="true"></div>
+            <div className="bg-orb orb-b" aria-hidden="true"></div>
             <section className="auth-panel role-login-panel">
                 <div className="role-panel-head">
                     <div>
                         <BrandTitle text="Gig Shield" />
-                        <span className="role-badge">{currentMeta.badge}</span>
-                        <h2>{currentMeta.title}</h2>
+                        <span className="role-badge">Unified Login</span>
+                        <h2>Sign in as {currentMeta.badge}</h2>
                         <p className="auth-subtitle">{currentMeta.subtitle}</p>
                     </div>
-                    <a className="back-link" href="/login">Change portal</a>
                 </div>
 
                 {data.flashes.length > 0 && (
@@ -174,7 +115,28 @@ function LoginApp() {
                     </div>
                 )}
 
-                <form method="POST" action={`/login/${currentRole}`} className="auth-form">
+                <form method="POST" action="/login" className="auth-form">
+                    <div className="auth-field role-switch">
+                        <label>Sign in as</label>
+                        <input type="hidden" name="role" value={role} />
+                        <div className="role-options" role="radiogroup" aria-label="Sign in as">
+                            {roleOptions.map(([optionRole, meta]) => {
+                                const isActive = role === optionRole;
+                                return (
+                                    <button
+                                        key={optionRole}
+                                        type="button"
+                                        className={`role-option ${isActive ? "active" : ""}`}
+                                        aria-pressed={isActive}
+                                        aria-label={`Sign in as ${meta.badge}`}
+                                        onClick={() => setRole(optionRole)}
+                                    >
+                                        <span className="role-option-badge">{meta.badge}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
                     <input
                         type="text"
                         name="username"
@@ -194,7 +156,7 @@ function LoginApp() {
                     <button type="submit" className="btn btn-primary">Sign In</button>
                 </form>
 
-                <p className="auth-hint">Only {currentRole} accounts can sign in here.</p>
+                <p className="auth-hint">Only {role} accounts can sign in with this selected role.</p>
             </section>
         </main>
     );

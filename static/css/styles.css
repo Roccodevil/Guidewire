@@ -1322,6 +1322,56 @@ input:focus {
     gap: 10px;
 }
 
+.auth-field {
+    display: grid;
+    gap: 6px;
+}
+
+.auth-field label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: #4f6283;
+}
+
+.role-options {
+    display: flex;
+    border: 1px solid #cdd9ee;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f8fbff;
+}
+
+.role-option {
+    flex: 1 1 0;
+    text-align: left;
+    display: block;
+    padding: 12px 14px;
+    border: 0;
+    background: transparent;
+    color: #314666;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease;
+}
+
+.role-option + .role-option {
+    border-left: 1px solid #d8e3f4;
+}
+
+.role-option:hover {
+    background: #f2f7ff;
+}
+
+.role-option.active {
+    background: var(--theme-accent-soft, rgba(31, 122, 94, 0.12));
+    color: var(--theme-accent, #1f7a5e);
+}
+
+.role-option-badge {
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
 .auth-hint {
     margin-top: 14px;
     font-size: 0.85rem;
