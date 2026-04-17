@@ -1,13 +1,17 @@
-# Gig Shield | Guidewire DevTrails Submission
+🚀 Gig Shield | Guidewire DevTrails Submission
+
+Intelligent emergency response, claims automation, and real-time insurance operations in one unified platform.
 
 Gig Shield is an intelligent emergency response and insurance workflow platform built to transform how urgent incidents, claims, and crisis situations are handled. Instead of scattered calls, delayed paperwork, and the timeless human tradition of chaos, Gig Shield centralizes everything into one smart platform.
 
-## Live Demo and Video
+🌐 Live Demo and Resources
+Resource	Link
+Live Demo	https://guidewire-1.onrender.com
+Video Explanation	https://youtu.be/vHCcRVP5fNo?si=DPhJpVSMs-zXwBTl
+Google Drive Folder	https://drive.google.com/drive/folders/11bfbUGi1D2T872Ecc9vyL54aSE9UbjQa?usp=sharing
 
-- Live working link: https://guidewire-1.onrender.com
-- Demo video: https://youtu.be/vHCcRVP5fNo?si=DPhJpVSMs-zXwBTl
 
-## Table of Contents
+📚 Table of Contents
 
 - Overview
 - Why It Matters
@@ -23,7 +27,7 @@ Gig Shield is an intelligent emergency response and insurance workflow platform 
 - AI Workflow Snapshot
 - Deployment Notes
 
-## Overview
+🧭 Overview
 
 Gig Shield connects workers, dispatch teams, and administrators in one real-time platform for:
 - Incident and claim reporting
@@ -34,79 +38,79 @@ Gig Shield connects workers, dispatch teams, and administrators in one real-time
 
 This implementation is focused on gig-delivery insurance workflows and high-speed operational response.
 
-## Why It Matters
+💡 Why It Matters
 
 Emergency and insurance workflows often fail because systems are fragmented, handoffs are slow, and decision quality drops under pressure. Gig Shield improves operational clarity by combining real-time telemetry, role-based access, and AI-assisted decisions in a single dashboard-driven product.
 
-## Features
+✨ Features
 
-### User and Access
-- Secure role-based login for `worker`, `company`, and `admin`
-- Session hardening with protected-page login consumption and no-cache controls
+  ### User and Access
+  - Secure role-based login for `worker`, `company`, and `admin`
+  - Session hardening with protected-page login consumption and no-cache controls
+  
+  ### Worker Experience
+  - View wallet and policy status
+  - Buy weekly coverage tiers
+  - Receive pending assignments
+  - Accept routes and stream GPS telemetry
+  - Trigger claim decision flow on severe disruption
+  
+  ### Company Operations
+  - Dispatch orders manually with map coordinates
+  - Use AI auto-dispatch for worker assignment and reasoning
+  
+  ### Admin Intelligence
+  - Add/delete workers
+  - Add/delete policy options
+  - Generate policy tiers via AI actuarial flow
+  - Override premiums manually
+  - Monitor live order feed and claims analytics
+  
+  ### Smart Decision Layer
+  - Route risk analysis from TomTom traffic context
+  - Fraud scoring via neural model + explainability
+  - Actuarial pricing support with autoregressive baseline risk and weather signal
+  
+  ## Use Cases
+  
+  - Insurance claim management
+  - Disaster and disruption response coordination
+  - Corporate incident and operations reporting
+  - Smart city service grievance routing
 
-### Worker Experience
-- View wallet and policy status
-- Buy weekly coverage tiers
-- Receive pending assignments
-- Accept routes and stream GPS telemetry
-- Trigger claim decision flow on severe disruption
+🛠️ Tech Stack
 
-### Company Operations
-- Dispatch orders manually with map coordinates
-- Use AI auto-dispatch for worker assignment and reasoning
+  ### Frontend
+  - React 18 (UMD CDN)
+  - ReactDOM 18 (UMD CDN)
+  - Babel Standalone (runtime JSX transform)
+  - Custom CSS (pure CSS, not Tailwind)
+  - GSAP for animation
+  - Leaflet for map interactions (company view)
+  - Chart.js for analytics visualizations (admin view)
+  
+  ### Backend
+  - Python + Flask
+  - Flask-SQLAlchemy
+  - APScheduler
+  - Requests
+  
+  ### Database
+  - PostgreSQL-compatible database via SQLAlchemy URI (`NEON_DATABASE_URL`)
+  - Driver: `psycopg2-binary`
+  
+  ### AI Layer
+  - LangGraph orchestration
+  - LangChain Core + LangChain Groq
+  - scikit-learn neural classifier
+  - SHAP explainability
+  - statsmodels AutoReg forecasting
+  - Pydantic structured outputs
+  
+  ### Hosting
+  - Render (live deployment)
 
-### Admin Intelligence
-- Add/delete workers
-- Add/delete policy options
-- Generate policy tiers via AI actuarial flow
-- Override premiums manually
-- Monitor live order feed and claims analytics
-
-### Smart Decision Layer
-- Route risk analysis from TomTom traffic context
-- Fraud scoring via neural model + explainability
-- Actuarial pricing support with autoregressive baseline risk and weather signal
-
-## Use Cases
-
-- Insurance claim management
-- Disaster and disruption response coordination
-- Corporate incident and operations reporting
-- Smart city service grievance routing
-
-## Tech Stack
-
-### Frontend
-- React 18 (UMD CDN)
-- ReactDOM 18 (UMD CDN)
-- Babel Standalone (runtime JSX transform)
-- Custom CSS (pure CSS, not Tailwind)
-- GSAP for animation
-- Leaflet for map interactions (company view)
-- Chart.js for analytics visualizations (admin view)
-
-### Backend
-- Python + Flask
-- Flask-SQLAlchemy
-- APScheduler
-- Requests
-
-### Database
-- PostgreSQL-compatible database via SQLAlchemy URI (`NEON_DATABASE_URL`)
-- Driver: `psycopg2-binary`
-
-### AI Layer
-- LangGraph orchestration
-- LangChain Core + LangChain Groq
-- scikit-learn neural classifier
-- SHAP explainability
-- statsmodels AutoReg forecasting
-- Pydantic structured outputs
-
-### Hosting
-- Render (live deployment)
-
-## Project Structure
+🗂️ Project Structure
 
 ```text
 Guidewire/
