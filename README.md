@@ -5,10 +5,9 @@ Intelligent emergency response, claims automation, and real-time insurance opera
 Gig Shield is an intelligent emergency response and insurance workflow platform built to transform how urgent incidents, claims, and crisis situations are handled. Instead of scattered calls, delayed paperwork, and the timeless human tradition of chaos, Gig Shield centralizes everything into one smart platform.
 
 🌐 Live Demo and Resources
-Resource                                             	Link
-Live Demo	                                            https://guidewire-1.onrender.com
-Video Explanation	                                    https://youtu.be/vHCcRVP5fNo?si=DPhJpVSMs-zXwBTl
-Pitch Deck                                            https://drive.google.com/drive/folders/11bfbUGi1D2T872Ecc9vyL54aSE9UbjQa?usp=sharing
+Live Demo	: https://guidewire-1.onrender.com
+Video Explanation	: https://youtu.be/vHCcRVP5fNo?si=DPhJpVSMs-zXwBTl
+Pitch Deck : https://drive.google.com/drive/folders/11bfbUGi1D2T872Ecc9vyL54aSE9UbjQa?usp=sharing
 
 
 📚 Table of Contents
