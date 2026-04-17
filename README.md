@@ -6,6 +6,7 @@ Gig Shield is an intelligent emergency response and insurance workflow platform 
 
 - Live working link: https://guidewire-1.onrender.com
 - Demo video: https://youtu.be/vHCcRVP5fNo?si=DPhJpVSMs-zXwBTl
+- pitch deck link: https://drive.google.com/drive/folders/11bfbUGi1D2T872Ecc9vyL54aSE9UbjQa?usp=sharing
 
 ## Table of Contents
 
